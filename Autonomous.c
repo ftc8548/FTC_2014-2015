@@ -17,19 +17,17 @@
 
 #include "includes.h"
 #include "autoFunctions.h"
+#include "teleopFunctions.h"
 
 task main() {
 	Joystick_WaitForStart();
+	
 	Task_Spawn(Gyro);
 	Task_Spawn(raiseIR);
 	Task_Spawn(readIR);
 
-	motor[rightWheel] = 100;
-	motor[leftWheel] = 100;
-	wait1Msec(1250);
-	motor[rightWheel] = 0;
-	motor[leftWheel] = 0;
-	wait1Msec(4000);
+	Task_Spawn(dropClamp);
+
 	driveForward(40);
 	turnLeft(90.0);
 	turnRight(180.0);

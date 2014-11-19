@@ -24,20 +24,20 @@ void driveBackward(float distance);
 void checkIR();
 
 float wheelSize = 14.6; // in cm
+float gearRatio = 2;
 float vel_curr = 0.0;
 float vel_prev = 0.0;
 float dt = 0.0;
 float timer_gyro = 0;
 float heading = 0.0;
 float error;
-int fullPower = 100;
+float fullPower = 100;
 bool irDetected = false;
 
-task Gyro();
-task raiseIR();
-task lowerIR();
-task readIR();
-
+task t_gyro();
+task t_raiseIR();
+task t_lowerIR();
+task t_readIR();
 
 task Gyro() {
 	Time_ClearTimer(timer_gyro);
@@ -62,10 +62,10 @@ task lowerIR() {
 }
 
 task readIR() {
-	while(!irDetected) {
+	while(true) {
 		checkIR();
-		wait1Msec(1);
 	}
+	wait1Msec(1);
 }
 
 void turnLeft(float degrees) {
@@ -127,12 +127,12 @@ void turnRight(float degrees) {
 }
 
 void driveForward(float distance) {
-	float target = distance;
+	float target = distance / wheelSize / gearRatio; // is in ticks
 	float kP = 0.03;
 	float power = 0.0;
 	bool isMoving = true;
 	int timer_timeout = 0;
-	int timer_threshold = 4000;
+	int timer_threshold = 3000;
 	float pos_avg;
 	Time_ClearTimer(timer_timeout);
 
@@ -142,10 +142,17 @@ void driveForward(float distance) {
 	while(isMoving) {
 		pos_avg = (Motor_GetEncoder(leftWheel) - Motor_GetEncoder(rightWheel)) / 2.0;
 		error = target - pos_avg;
-		if(error > 3000)
-			power = g_FullPower;
+		if(error > 0) {
+			power = fullPower;
+		}
+		else {
+			power = -fullPower;
+		}
+
+		/*if(error > 3000)
+			power = fullPower;
 		else if(error < -3000)
-			power = -g_FullPower;
+			power = -fullPower;
 		else
 			power = kP*error;
 		if(abs(power) < 10) {
@@ -153,19 +160,25 @@ void driveForward(float distance) {
 				power = 15;
 			else if(power < 0)
 				power = -15;
-		}
-		power = Math_Limit(power, g_FullPower);
-		Motor_SetPower(power, leftWheel);
-		Motor_SetPower(power, rightWheel);
+		}*/
+
+		//power = Math_Limit(power, g_FullPower);
+		//Motor_SetPower(power, leftWheel);
+		//Motor_SetPower(power, rightWheel);
+		motor[leftWheel] = power;
+		motor[rightWheel] = power;
 		if(abs(error) < 150)
 			isMoving = false;
 		if(Time_GetTime(timer_timeout) > timer_threshold) {
 			isMoving = false;
-			Motor_SetPower(0, leftWheel);
-			Motor_SetPower(0, rightWheel);
-			Time_Wait(50);
+			//Motor_SetPower(0, leftWheel);
+			//Motor_SetPower(0, rightWheel);
+			motor[leftWheel] = 0;
+			motor[rightWheel] = 0;
+			//Time_Wait(50);
 		}
 	}
+	wait1Msec(1);
 }
 
 void driveBackward(float distance) {
