@@ -1,13 +1,14 @@
 #pragma config(Hubs,  S1, HTMotor,  HTMotor,  HTServo,  HTMotor)
 #pragma config(Sensor, S2,     gyroSensor,     sensorI2CHiTechnicGyro)
+#pragma config(Sensor, S3,     irSensor,       sensorHiTechnicIRSeeker600)
 #pragma config(Motor,  mtr_S1_C1_1,     leftWheel,     tmotorTetrix, openLoop, encoder)
 #pragma config(Motor,  mtr_S1_C1_2,     pickupMotor,   tmotorTetrix, openLoop)
 #pragma config(Motor,  mtr_S1_C2_1,     rightWheel,    tmotorTetrix, openLoop, reversed, encoder)
 #pragma config(Motor,  mtr_S1_C2_2,     Blah,          tmotorTetrix, openLoop, reversed)
 #pragma config(Motor,  mtr_S1_C4_1,     liftMotor,     tmotorTetrix, openLoop)
 #pragma config(Motor,  mtr_S1_C4_2,     liftMotor,     tmotorTetrix, openLoop)
-#pragma config(Servo,  srvo_S1_C3_1,    IRMotor,              tServoStandard)
-#pragma config(Servo,  srvo_S1_C3_2,    servo2,               tServoNone)
+#pragma config(Servo,  srvo_S1_C3_1,    irServo,              tServoStandard)
+#pragma config(Servo,  srvo_S1_C3_2,    clampServo,               tServoNone)
 #pragma config(Servo,  srvo_S1_C3_3,    servo3,               tServoNone)
 #pragma config(Servo,  srvo_S1_C3_4,    servo4,               tServoNone)
 #pragma config(Servo,  srvo_S1_C3_5,    servo5,               tServoNone)
@@ -70,22 +71,30 @@ task main() {
 
 			// loop controlling the pickup
 		// for picking up
-		while(Joystick_Button(BUTTON_RT, CONTROLLER_1)) {
-			isPicking = true;
+		if(Joystick_Button(BUTTON_RT, CONTROLLER_1)) {
+			Task_Kill(t_reversePickup);
 			Task_Spawn(t_startPickup);
 		}
-
 		// for releasing
-		while(Joystick_Button(BUTTON_LT, CONTROLLER_1)) {
-			isReversing = true;
+		else if(Joystick_Button(BUTTON_LT, CONTROLLER_1)) {
+			Task_Kill(t_startPickup);
 			Task_Spawn(t_reversePickup);
 		}
-
 		// for stoppping pickup
-		if(isPicking == true || isReversing == true) {
-			if(Joystick_Button(BUTTON_BACK)) {
+		else if(Joystick_Button(BUTTON_BACK) && isPickup == true) {
+				Task_Kill(t_startPickup);
+				Task_Kill(t_reversePickup);
 				Task_Spawn(t_stopPickup);
-			}
+
+		}
+
+			// for clamp
+		// drops the clamp
+		if(Joystick_Button(BUTTON_A, CONTROLLER_2)) {
+			Task_Spawn(t_dropClamp);
+		}
+		if(Joystick_Button(BUTTON_B, CONTROLLER_2)) {
+			Task_Spawn(t_raiseClamp);
 		}
 
 		wait1Msec(1);

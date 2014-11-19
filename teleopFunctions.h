@@ -1,13 +1,14 @@
 #pragma config(Hubs,  S1, HTMotor,  HTMotor,  HTServo,  HTMotor)
 #pragma config(Sensor, S2,     gyroSensor,     sensorI2CHiTechnicGyro)
+#pragma config(Sensor, S3,     irSensor,       sensorHiTechnicIRSeeker600)
 #pragma config(Motor,  mtr_S1_C1_1,     leftWheel,     tmotorTetrix, openLoop, encoder)
 #pragma config(Motor,  mtr_S1_C1_2,     pickupMotor,   tmotorTetrix, openLoop)
 #pragma config(Motor,  mtr_S1_C2_1,     rightWheel,    tmotorTetrix, openLoop, reversed, encoder)
 #pragma config(Motor,  mtr_S1_C2_2,     Blah,          tmotorTetrix, openLoop, reversed)
 #pragma config(Motor,  mtr_S1_C4_1,     liftMotor,     tmotorTetrix, openLoop)
 #pragma config(Motor,  mtr_S1_C4_2,     liftMotor,     tmotorTetrix, openLoop)
-#pragma config(Servo,  srvo_S1_C3_1,    IRMotor,              tServoStandard)
-#pragma config(Servo,  srvo_S1_C3_2,    servo2,               tServoNone)
+#pragma config(Servo,  srvo_S1_C3_1,    irServo,              tServoStandard)
+#pragma config(Servo,  srvo_S1_C3_2,    clampServo,               tServoNone)
 #pragma config(Servo,  srvo_S1_C3_3,    servo3,               tServoNone)
 #pragma config(Servo,  srvo_S1_C3_4,    servo4,               tServoNone)
 #pragma config(Servo,  srvo_S1_C3_5,    servo5,               tServoNone)
@@ -23,11 +24,15 @@ void raiseLift(bool isRaising);
 void lowerLift(int r_position);
 void lowerLift(bool isLowering);
 // starts the pickup
-void startPickup(bool isPicking);
+void startPickup();
 // reverses the pickup
-void reversePickup(bool isReversing);
+void reversePickup();
 // stops the pickup
-void stopPickup(bool isTurning);
+void stopPickup();
+// drops the clamp
+void dropClamp();
+// raises the clamp
+void raiseClamp();
 
 task t_raiseLiftLow();
 task t_raiseLiftMiddle();
@@ -37,9 +42,10 @@ task t_lowerLift();
 task t_lowerLiftSlightly();
 task t_raiseLiftSlightly();
 task t_startPickup();
-task t_stopPickup();
 task t_reversePickup();
-
+task t_stopPickup();
+task t_dropClamp();
+task t_raiseClamp();
 
 const int timeGoal1 = 2 *1000;
 const int timeGoal2 = 4 *1000;
@@ -49,9 +55,9 @@ bool s_isLowering = false;
 bool s_isRaising = false;
 bool isLowering = false;
 bool isRaising = false;
-bool isPicking = false;
-bool isReversing = false;
+bool isPickup = false;
 bool isTurning = false;
+bool isClampDropped = false;
 
 typedef enum Position {
 	upLow,
@@ -110,32 +116,46 @@ void lowerLift(bool isLowering) {
 }
 
 // picks up balls
-void startPickup(bool isPicking) {
-	while(isPicking) {
+void startPickup() {
+	while(true) {
 		motor[pickupMotor] = 87;
-		wait1Msec(100);
+		isPickup = true;
 	}
 	wait1Msec(1);
 }
 
 // releases balls from the pickup
-void reversePickup(bool isReversing) {
-	while(isReversing) {
+void reversePickup() {
+	while(true) {
 		motor[pickupMotor] = -87;
-		wait1Msec(100);
+		isPickup = true;
 	}
 	wait1Msec(1);
 }
 
 // stops the pickup
-void stopPickup(bool isTurning) {
-	while(isTurning) {
-		motor[pickupMotor] = 0;
-		wait1Msec(1);
+void stopPickup() {
+	motor[pickupMotor] = 0;
+	isPickup = false;
+	wait1Msec(1);
+}
+
+// drops the clamp
+void dropClamp() {
+	if(!isClampDropped) {
+		servo[clampServo] = 120;
+		isClampDropped = true;
 	}
 	wait1Msec(1);
 }
 
+void raiseClamp() {
+	if(isClampDropped) {
+		servo[clampServo] = 0;
+		isClampDropped = false;
+	}
+	wait1Msec(1);
+}
 // raise lift to lowest goal task
 task t_raiseLiftLow() {
 	isRaising = true;
@@ -190,17 +210,29 @@ task t_raiseLiftSlightly() {
 
 // pick up balls
 task t_startPickup() {
-	startPickup(isPicking);
+	startPickup();
 	wait1Msec(1);
 }
 
 // reverese the pickup
 task t_reversePickup() {
-	reversePickup(isReversing);
+	reversePickup();
 	wait1Msec(1);
 }
 
 task t_stopPickup() {
-	stopPickup(isTurning);
+	stopPickup();
+	wait1Msec(1);
+}
+
+// drops the clamp
+task t_dropClamp() {
+	dropClamp();
+	wait1Msec(1);
+}
+
+// raises the clamp
+task t_raiseClamp() {
+	raiseClamp();
 	wait1Msec(1);
 }
