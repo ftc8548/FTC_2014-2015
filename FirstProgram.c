@@ -33,40 +33,49 @@ task main() {
 		motor[rightWheel] = Joystick_GenericInput(JOYSTICK_R, AXIS_Y, CONTROLLER_1);
 
 		// loop controlling the lift
-		// for the lowest rolling goal
-		if(Joystick_ButtonReleased(BUTTON_A, CONTROLLER_1) && position == down) {
-			Task_Spawn(t_raiseLiftLow);
-			position = upLow;
-		}
-		// for the middle rolling goal
-		else if(Joystick_ButtonReleased(BUTTON_B, CONTROLLER_1) && position == down) {
-			Task_Spawn(t_raiseLiftMiddle);
-			position = upMiddle;
-		}
-		// for the highest rolling goal
-		else if(Joystick_ButtonReleased(BUTTON_Y, CONTROLLER_1) && position == down) {
-			Task_Spawn(t_raiseLiftHigh);
-			position = upHigh;
-		}
-		// for the center goal
-		else if(Joystick_ButtonReleased(BUTTON_X, CONTROLLER_1) && position == down) {
-			Task_Spawn(t_raiseLiftCenter);
- 			position = upCenter;
-		}
-		// lowers the lift all the way to the ground
- 		else if(Joystick_ButtonReleased(BUTTON_START, CONTROLLER_1) && position != down) {
-			Task_Spawn(t_lowerLift);
-			position = down;
-		}
-		// raises the lift slightly
-		if(!isRaising && !isLowering) {
-			while(Joystick_Button(BUTTON_RB, CONTROLLER_1))
-				isRaising = true;
-			isRaising = false;
- 		// lowers the lift slightly
-			while(Joystick_Button(BUTTON_LB, CONTROLLER_1))
-				isLowering = true;
- 			isLowering = false;
+		if(!isLift) {
+			// for the lowest rolling goal
+			if(Joystick_ButtonPressed(BUTTON_A, CONTROLLER_2) && position == down) {
+				Task_Spawn(t_raiseLiftLow);
+				position = upLow;
+			}
+			// for the middle rolling goal
+			else if(Joystick_ButtonPressed(BUTTON_B, CONTROLLER_2) && position == down) {
+				Task_Spawn(t_raiseLiftMiddle);
+				position = upMiddle;
+			}
+			// for the highest rolling goal
+			else if(Joystick_ButtonPressed(BUTTON_Y, CONTROLLER_2) && position == down) {
+				Task_Spawn(t_raiseLiftHigh);
+				position = upHigh;
+			}
+			// for the center goal
+			else if(Joystick_ButtonPressed(BUTTON_X, CONTROLLER_2) && position == down) {
+				Task_Spawn(t_raiseLiftCenter);
+ 				position = upCenter;
+			}
+			// lowers the lift all the way to the ground
+ 			else if(Joystick_ButtonPressed(BUTTON_START, CONTROLLER_2) && position != down) {
+				Task_Spawn(t_lowerLift);
+				position = down;
+			}
+
+				// for minor lift changes
+			// raises lift slightly
+			while(Joystick_Button(BUTTON_RB, CONTROLLER_2)) {
+				isLift = true;
+				Task_Spawn(t_raiseLiftSlightly);
+			}
+			isLift = false;
+			Task_Kill(t_raiseLiftSlightly);
+
+			// lowers the lift slightly
+			while(Joystick_Button(BUTTON_LB, CONTROLLER_2)) {
+				isLift = true;
+				Task_Spawn(t_lowerLiftSlightly);
+			}
+ 			isLift = false;
+ 			Task_Kill(t_lowerLiftSlightly);
 		}
 
 			// loop controlling the pickup
@@ -85,7 +94,6 @@ task main() {
 				Task_Kill(t_startPickup);
 				Task_Kill(t_reversePickup);
 				Task_Spawn(t_stopPickup);
-
 		}
 
 			// for clamp

@@ -19,10 +19,10 @@
 
 // raises the lift
 void raiseLift(int seconds);
-void raiseLift(bool isRaising);
+void raiseLift(bool isLift);
 // lowers the lift
 void lowerLift(int r_position);
-void lowerLift(bool isLowering);
+void lowerLift(bool isLift);
 // starts the pickup
 void startPickup();
 // reverses the pickup
@@ -51,10 +51,8 @@ const int timeGoal1 = 2 *1000;
 const int timeGoal2 = 4 *1000;
 const int timeGoal3 = 6 *1000;
 const int timeGoal4 = 8 *1000;
-bool s_isLowering = false;
-bool s_isRaising = false;
-bool isLowering = false;
-bool isRaising = false;
+
+bool isLift = false;
 bool isPickup = false;
 bool isTurning = false;
 bool isClampDropped = false;
@@ -70,23 +68,24 @@ Position position = down;
 
 // raises the lift
 void raiseLift(int seconds) {
-	motor[liftMotor] = 87;
+	motor[liftMotor] = 100;
 	wait1Msec(seconds);
 	motor[liftMotor] = 0;
 }
 
 // raises the lift
-void raiseLift(bool isRaising) {
-	motor[liftMotor] = 50;
-	while(isRaising) {
-		wait1Msec(1);
+void raiseLift(bool isLift) {
+	while(isLift) {
+		motor[liftMotor] = 50;
 	}
 	motor[liftMotor] = 0;
+	wait1Msec(1);
 }
 
 // lowers the lift
 void lowerLift(int r_position) {
-	motor[liftMotor] = -87;
+	isLift = true;
+	motor[liftMotor] = -100;
 	switch(r_position) {
 		case upLow:
 			wait1Msec(timeGoal1);
@@ -104,21 +103,22 @@ void lowerLift(int r_position) {
 			break;
 	}
 	motor[liftMotor] = 0;
+	isLift = false;
 }
 
 // lowers the lift
-void lowerLift(bool isLowering) {
-	motor[liftMotor] = -50;
-	while(isLowering) {
-		wait1Msec(1);
+void lowerLift(bool isLift) {
+	while(isLift) {
+		motor[liftMotor] = -50;
 	}
 	motor[liftMotor] = 0;
+	wait1Msec(1);
 }
 
 // picks up balls
 void startPickup() {
 	while(true) {
-		motor[pickupMotor] = 87;
+		motor[pickupMotor] = 100;
 		isPickup = true;
 	}
 	wait1Msec(1);
@@ -127,7 +127,7 @@ void startPickup() {
 // releases balls from the pickup
 void reversePickup() {
 	while(true) {
-		motor[pickupMotor] = -87;
+		motor[pickupMotor] = -100;
 		isPickup = true;
 	}
 	wait1Msec(1);
@@ -158,53 +158,43 @@ void raiseClamp() {
 }
 // raise lift to lowest goal task
 task t_raiseLiftLow() {
-	isRaising = true;
 	raiseLift(timeGoal1);
-	isRaising = false;
 	wait1Msec(1);
 }
 
 // raise lift to middle goal task
 task t_raiseLiftMiddle() {
-	isRaising = true;
 	raiseLift(timeGoal2);
-	isRaising = false;
 	wait1Msec(1);
 }
 
 // raise lift to high goal task
 task t_raiseLiftHigh() {
-	isRaising = true;
 	raiseLift(timeGoal3);
-	isRaising = false;
 	wait1Msec(1);
 }
 
 // raise lift to center goal task
 task t_raiseLiftCenter() {
-	isRaising = true;
 	raiseLift(timeGoal4);
-	isRaising = false;
 	wait1Msec(1);
 }
 
 // lowers the lift task
 task t_lowerLift() {
-	isLowering = true;
 	lowerLift(position);
-	isLowering = false;
 	wait1Msec(1);
 }
 
 // raises the lift slightly
 task t_lowerLiftSlightly() {
-	lowerLift(s_isLowering);
+	lowerLift(isLift);
 	wait1Msec(1);
 }
 
 // raises lift slightly
 task t_raiseLiftSlightly() {
-	raiseLift(s_isRaising);
+	raiseLift(isLift);
 	wait1Msec(1);
 }
 

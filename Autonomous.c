@@ -17,16 +17,24 @@
 
 #include "includes.h"
 #include "autoFunctions.h"
-#include "teleopFunctions.h"
 
 task main() {
 	Joystick_WaitForStart();
-	
-	Task_Spawn(Gyro);
-	Task_Spawn(raiseIR);
-	Task_Spawn(readIR);
 
-	Task_Spawn(dropClamp);
+	Task_Spawn(a_gyro);
+	Task_Spawn(a_raiseIR);
+	Task_Spawn(a_readIR);
+
+	while(!irDetected) {
+		// ir detection stuff goes here
+		driveForward(40);
+		turnLeft(90);
+		turnRight(180);
+		driveBackward(40);
+	}
+	// enter stuff for after ir detected here
+	// do the ball drop and move away before dropping ir
+	Task_Spawn(a_lowerIR);
 
 	driveForward(40);
 	turnLeft(90.0);

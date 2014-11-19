@@ -28,22 +28,23 @@ float gearRatio = 2;
 float vel_curr = 0.0;
 float vel_prev = 0.0;
 float dt = 0.0;
-float timer_gyro = 0;
+int timer_gyro = 0;
 float heading = 0.0;
 float error;
 float fullPower = 100;
 bool irDetected = false;
 
-task t_gyro();
-task t_raiseIR();
-task t_lowerIR();
-task t_readIR();
+task a_gyro();
+task a_raiseIR();
+task a_lowerIR();
+task a_readIR();
+task a_dropClamp();
 
-task Gyro() {
+task a_gyro() {
 	Time_ClearTimer(timer_gyro);
 	while (true) {
 		vel_prev = vel_curr;
-		dt = Time_GetTime(timer_gyro)/1000.0;
+		dt = (float)Time_GetTime(timer_gyro) /1000.0;
 		Time_ClearTimer(timer_gyro);
 		vel_curr = (float)HTGYROreadRot(gyroSensor);
 		heading += (vel_prev+vel_curr)*0.5*dt;
@@ -51,19 +52,26 @@ task Gyro() {
 	}
 }
 
-task raiseIR() {
+task a_raiseIR() {
 	servo[irServo] = 255;
 	wait1Msec(1);
 }
 
-task lowerIR() {
+task a_lowerIR() {
 	servo[irServo] = 0;
 	wait1Msec(1);
 }
 
-task readIR() {
+task a_readIR() {
 	while(true) {
 		checkIR();
+	}
+	wait1Msec(1);
+}
+
+task a_dropClamp() {
+	if(irDetected) {
+		servo[clampServo] = 120;
 	}
 	wait1Msec(1);
 }
@@ -77,7 +85,7 @@ void turnLeft(float degrees) {
 	float kP = 5.7;
 	bool isFineTune = false;
 	float finish_timer = 0.0;
-	float timer_timeout = 0.0;
+	int timer_timeout = 0.0;
 	float timeout_threshold = 3000.0;
 
 	Time_ClearTimer(timer_timeout);
@@ -98,8 +106,8 @@ void turnLeft(float degrees) {
 				power = -20;
 		}
 		power_neg = -power;
-		Motor_SetPower(power_neg, leftWheel);
-		Motor_SetPower(power, rightWheel);
+		motor[leftWheel] = power_neg;
+		motor[rightWheel] = power;
 		if(abs(error) < 2.5) {
 			if(isFineTune == false) {
 				Time_ClearTimer(finish_timer);
@@ -118,8 +126,8 @@ void turnLeft(float degrees) {
 		}
 	}
 
-	Motor_SetPower(0, leftWheel);
-	Motor_SetPower(0, rightWheel);
+	motor[leftWheel] = 0;
+	motor[rightWheel] = 0;
 }
 
 void turnRight(float degrees) {
@@ -127,8 +135,8 @@ void turnRight(float degrees) {
 }
 
 void driveForward(float distance) {
-	float target = distance / wheelSize / gearRatio; // is in ticks
-	float kP = 0.03;
+	float target = distance / wheelSize / gearRatio / 1440 / 2 / PI; // is in revolutions
+	//float kP = 0.03;
 	float power = 0.0;
 	bool isMoving = true;
 	int timer_timeout = 0;
@@ -162,20 +170,14 @@ void driveForward(float distance) {
 				power = -15;
 		}*/
 
-		//power = Math_Limit(power, g_FullPower);
-		//Motor_SetPower(power, leftWheel);
-		//Motor_SetPower(power, rightWheel);
 		motor[leftWheel] = power;
 		motor[rightWheel] = power;
 		if(abs(error) < 150)
 			isMoving = false;
 		if(Time_GetTime(timer_timeout) > timer_threshold) {
 			isMoving = false;
-			//Motor_SetPower(0, leftWheel);
-			//Motor_SetPower(0, rightWheel);
 			motor[leftWheel] = 0;
 			motor[rightWheel] = 0;
-			//Time_Wait(50);
 		}
 	}
 	wait1Msec(1);
