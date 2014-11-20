@@ -2,9 +2,9 @@
 #pragma config(Sensor, S2,     gyroSensor,     sensorI2CHiTechnicGyro)
 #pragma config(Sensor, S3,     irSensor,       sensorHiTechnicIRSeeker600)
 #pragma config(Motor,  mtr_S1_C1_1,     leftWheel,     tmotorTetrix, openLoop, encoder)
-#pragma config(Motor,  mtr_S1_C1_2,     pickupMotor,   tmotorTetrix, openLoop)
+#pragma config(Motor,  mtr_S1_C1_2,     firstPickupMotor,   tmotorTetrix, openLoop)
 #pragma config(Motor,  mtr_S1_C2_1,     rightWheel,    tmotorTetrix, openLoop, reversed, encoder)
-#pragma config(Motor,  mtr_S1_C2_2,     Blah,          tmotorTetrix, openLoop, reversed)
+#pragma config(Motor,  mtr_S1_C2_2,     secondPickupMotor,          tmotorTetrix, openLoop, reversed)
 #pragma config(Motor,  mtr_S1_C4_1,     liftMotor,     tmotorTetrix, openLoop)
 #pragma config(Motor,  mtr_S1_C4_2,     liftMotor,     tmotorTetrix, openLoop)
 #pragma config(Servo,  srvo_S1_C3_1,    irServo,              tServoStandard)
@@ -17,11 +17,7 @@
 
 #include "includes.h"
 
-void turnLeft(float degrees);
-void turnRight(float degrees);
-void driveForward(float distance);
-void driveBackward(float distance);
-void checkIR();
+///////////////////////// Global Variables ///////////////////////////
 
 float wheelSize = 14.6; // in cm
 float gearRatio = 2;
@@ -34,48 +30,48 @@ float error;
 float fullPower = 100;
 bool irDetected = false;
 
+///////////////////////////// Function Declarations //////////////////////
+
+// turns the robot left
+void turnLeft(float degrees);
+// turns the robot right
+void turnRight(float degrees);
+// moves the robot forward
+void driveForward(float distance);
+// moves the robot backward
+void driveBackward(float distance);
+// checks the ir sensor for the beacon
+void checkIR();
+// starts the pickup
+void startPickup();
+// reverses the pickup
+void reversePickup();
+// stops the pickup
+void stopPickup();
+
+
+/////////////////////////// Task Declarations ///////////////////////////////
+
+// starts the gyro
 task a_gyro();
+// rasises the ir sensor
 task a_raiseIR();
+// lowers the ir sensor
 task a_lowerIR();
+// checks to see if the ir detects the beacon
 task a_readIR();
+// drops the clamp for roaling goals
 task a_dropClamp();
+// starts the pickup
+task a_startPickup();
+// reverses the pickup
+task a_reversePickup();
+// stops the pickup
+task a_stopPickup();
 
-task a_gyro() {
-	Time_ClearTimer(timer_gyro);
-	while (true) {
-		vel_prev = vel_curr;
-		dt = (float)Time_GetTime(timer_gyro) /1000.0;
-		Time_ClearTimer(timer_gyro);
-		vel_curr = (float)HTGYROreadRot(gyroSensor);
-		heading += (vel_prev+vel_curr)*0.5*dt;
-		wait1Msec(1);
-	}
-}
+///////////////////////////// Function Definitions ///////////////////////////
 
-task a_raiseIR() {
-	servo[irServo] = 255;
-	wait1Msec(1);
-}
-
-task a_lowerIR() {
-	servo[irServo] = 0;
-	wait1Msec(1);
-}
-
-task a_readIR() {
-	while(true) {
-		checkIR();
-	}
-	wait1Msec(1);
-}
-
-task a_dropClamp() {
-	if(irDetected) {
-		servo[clampServo] = 120;
-	}
-	wait1Msec(1);
-}
-
+// turns the robot left
 void turnLeft(float degrees) {
 	bool isTurning = true;
 	float startOrientation = heading;
@@ -130,10 +126,12 @@ void turnLeft(float degrees) {
 	motor[rightWheel] = 0;
 }
 
+// turns the robot to the right
 void turnRight(float degrees) {
 	turnLeft(-degrees);
 }
 
+// drives the robot forward
 void driveForward(float distance) {
 	float target = distance / wheelSize / gearRatio / 1440 / 2 / PI; // is in revolutions
 	//float kP = 0.03;
@@ -183,10 +181,12 @@ void driveForward(float distance) {
 	wait1Msec(1);
 }
 
+// moves the robot forward
 void driveBackward(float distance) {
 	driveForward(-distance);
 }
 
+// checks the ir sensor for the beacon
 void checkIR() {
 	if(SensorValue[irSensor] == 0)
 		irDetected = true;
@@ -194,3 +194,90 @@ void checkIR() {
 		irDetected = false;
 	wait1Msec(1);
 }
+
+// starts the pickup
+void startPickup() {
+	while(true) {
+		motor[firstPickupMotor] = 100;
+		motor[secondPickupMotor] = 100;
+	}
+	wait1Msec(1);
+}
+
+// reverses the pickup
+void reversePickup() {
+	while(true) {
+		motor[firstPickupMotor] = -100;
+		motor[secondPickupMotor] = -100;
+	}
+	wait1Msec(1);
+}
+
+// stops the pickup
+void stopPickup() {
+	motor[firstPickupMotor] = 0;
+	motor[secondPickupMotor] = 0;
+	wait1Msec(1);
+}
+
+////////////////////////////// Task Definitions ///////////////////////////
+
+// starts the gyro
+task a_gyro() {
+	Time_ClearTimer(timer_gyro);
+	while (true) {
+		vel_prev = vel_curr;
+		dt = (float)Time_GetTime(timer_gyro) /1000.0;
+		Time_ClearTimer(timer_gyro);
+		vel_curr = (float)HTGYROreadRot(gyroSensor);
+		heading += (vel_prev+vel_curr)*0.5*dt;
+		wait1Msec(1);
+	}
+}
+
+// raises the ir sensor
+task a_raiseIR() {
+	servo[irServo] = 255;
+	wait1Msec(1);
+}
+
+// lowers the ir sensor
+task a_lowerIR() {
+	servo[irServo] = 0;
+	wait1Msec(1);
+}
+
+// checks the ir for the beacon
+task a_readIR() {
+	while(true) {
+		checkIR();
+	}
+	wait1Msec(1);
+}
+
+// drops the clamp
+task a_dropClamp() {
+	if(irDetected) {
+		servo[clampServo] = 120;
+	}
+	wait1Msec(1);
+}
+
+// starts the pickup
+task a_startPickup() {
+	startPickUP();
+	wait1Msec(1);
+}
+
+// reverses the pickup
+task a_reversePickup() {
+	reversePickup();
+	wait1Msec(1);
+}
+
+// stops the pickup
+task a_stopPickup() {
+	stopPickup();
+	wait1Msec(1);
+}
+
