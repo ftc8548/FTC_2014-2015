@@ -9,7 +9,7 @@
 #pragma config(Motor,  mtr_S1_C4_2,     liftMotor,     tmotorTetrix, openLoop)
 #pragma config(Servo,  srvo_S1_C3_1,    irServo,              tServoStandard)
 #pragma config(Servo,  srvo_S1_C3_2,    clampServo,               tServoNone)
-#pragma config(Servo,  srvo_S1_C3_3,    servo3,               tServoNone)
+#pragma config(Servo,  srvo_S1_C3_3,    dropServo,               tServoNone)
 #pragma config(Servo,  srvo_S1_C3_4,    servo4,               tServoNone)
 #pragma config(Servo,  srvo_S1_C3_5,    servo5,               tServoNone)
 #pragma config(Servo,  srvo_S1_C3_6,    servo6,               tServoNone)
@@ -90,7 +90,7 @@ task main() {
 			Task_Spawn(t_reversePickup);
 		}
 		// for stoppping pickup
-		else if(Joystick_Button(BUTTON_BACK) && isPickup == true) {
+		else if(Joystick_Button(BUTTON_BACK, CONTROLLER_2) && isPickup == true) {
 				Task_Kill(t_startPickup);
 				Task_Kill(t_reversePickup);
 				Task_Spawn(t_stopPickup);
@@ -105,6 +105,14 @@ task main() {
 			Task_Spawn(t_raiseClamp);
 		}
 
+			// for the drop servo
+		// drops the balls
+		if(Joystick_Button(BUTTON_RB, CONTROLLER_2)) {
+			Task_Spawn(t_dropBall);
+		}
+		if(Joystick_Button(BUTTON_LB, CONTROLLER_2)) {
+			Task_Spawn(t_resetDrop);
+		}
 		wait1Msec(1);
 	}
 }

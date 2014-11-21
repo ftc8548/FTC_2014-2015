@@ -9,7 +9,7 @@
 #pragma config(Motor,  mtr_S1_C4_2,     liftMotor,     tmotorTetrix, openLoop)
 #pragma config(Servo,  srvo_S1_C3_1,    irServo,              tServoStandard)
 #pragma config(Servo,  srvo_S1_C3_2,    clampServo,               tServoNone)
-#pragma config(Servo,  srvo_S1_C3_3,    servo3,               tServoNone)
+#pragma config(Servo,  srvo_S1_C3_3,    dropServo,               tServoNone)
 #pragma config(Servo,  srvo_S1_C3_4,    servo4,               tServoNone)
 #pragma config(Servo,  srvo_S1_C3_5,    servo5,               tServoNone)
 #pragma config(Servo,  srvo_S1_C3_6,    servo6,               tServoNone)
@@ -53,6 +53,10 @@ void stopPickup();
 void dropClamp();
 // raises the clamp
 void raiseClamp();
+// drops the balls
+void dropBall();
+// resets the ball drop
+void resetDrop();
 
 /////////////////////////// Task Declarations ///////////////////////
 
@@ -68,6 +72,8 @@ task t_reversePickup();
 task t_stopPickup();
 task t_dropClamp();
 task t_raiseClamp();
+task t_dropBall();
+task t_resetDrop();
 
 /////////////////////////// Function Definitions ///////////////////////
 
@@ -154,9 +160,20 @@ void dropClamp() {
 	wait1Msec(1);
 }
 
+// raises the clamp
 void raiseClamp() {
 	servo[clampServo] = 0;
 	wait1Msec(1);
+}
+
+// drops the balls
+void dropBall() {
+	servo[dropServo] = 255;
+}
+
+// resets the drop servo
+void resetDrop() {
+	servo[dropServo] = 0;
 }
 
 /////////////////////////////// Task Definitions ////////////////////
@@ -229,5 +246,17 @@ task t_dropClamp() {
 // raises the clamp
 task t_raiseClamp() {
 	raiseClamp();
+	wait1Msec(1);
+}
+
+// drops the balls
+task t_dropBall() {
+	dropBall();
+	wait1Msec(1);
+}
+
+// resets the drop servo
+task t_resetDrop() {
+	resetDrop();
 	wait1Msec(1);
 }

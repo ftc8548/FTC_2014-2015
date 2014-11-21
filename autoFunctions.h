@@ -9,7 +9,7 @@
 #pragma config(Motor,  mtr_S1_C4_2,     liftMotor,     tmotorTetrix, openLoop)
 #pragma config(Servo,  srvo_S1_C3_1,    irServo,              tServoStandard)
 #pragma config(Servo,  srvo_S1_C3_2,    clampServo,               tServoNone)
-#pragma config(Servo,  srvo_S1_C3_3,    servo3,               tServoNone)
+#pragma config(Servo,  srvo_S1_C3_3,    dropServo,               tServoNone)
 #pragma config(Servo,  srvo_S1_C3_4,    servo4,               tServoNone)
 #pragma config(Servo,  srvo_S1_C3_5,    servo5,               tServoNone)
 #pragma config(Servo,  srvo_S1_C3_6,    servo6,               tServoNone)
@@ -17,7 +17,7 @@
 
 #include "includes.h"
 
-///////////////////////// Global Variables ///////////////////////////
+///////////////////////// Global Variables //////////////////////////
 
 float wheelSize = 14.6; // in cm
 float gearRatio = 2;
@@ -29,6 +29,18 @@ float heading = 0.0;
 float error;
 float fullPower = 100;
 bool irDetected = false;
+int timeGoal = 2 * 1000;
+int timeCenter = 4 * 1000;
+int timeOneBall = 100;
+int timeFiveBall = 2 * 1000;
+int positionOneBall = 50;
+int positionFiveBall = 255;
+typedef enum Position {
+	goal,
+	center,
+	down
+};
+Position position = down;
 
 ///////////////////////////// Function Declarations //////////////////////
 
@@ -48,7 +60,12 @@ void startPickup();
 void reversePickup();
 // stops the pickup
 void stopPickup();
-
+// raises the lift to the goal
+void raiseLift(int seconds);
+// lowers the lift
+void lowerLift(int seconds);
+// drops the balls
+void dropBall(int position, int seconds);
 
 /////////////////////////// Task Declarations ///////////////////////////////
 
@@ -68,10 +85,20 @@ task a_startPickup();
 task a_reversePickup();
 // stops the pickup
 task a_stopPickup();
+// raises the lift
+task a_raiseLiftGoal();
+// raises the lift to the center
+task a_raiseLiftCenter();
+// lowers the lift
+task a_lowerLift();
+// drops 1 ball
+task a_dropOneBall();
+// drops 5 balls
+task a_dropFiveBall();
 
 ///////////////////////////// Function Definitions ///////////////////////////
 
-// turns the robot left
+// turns the robot to the left
 void turnLeft(float degrees) {
 	bool isTurning = true;
 	float startOrientation = heading;
@@ -220,6 +247,27 @@ void stopPickup() {
 	wait1Msec(1);
 }
 
+// raises the lift
+void raiseLift(int seconds) {
+	motor[liftMotor] = 100;
+	wait1Msec(seconds);
+	motor[liftMotor] = 0;
+}
+
+// lowers the lift
+void lowerLift(int seconds) {
+	motor[liftMotor] = -100;
+	wait1Msec(seconds);
+	motor[liftMotor] = 0;
+}
+
+// drops one ball
+void dropBall(int position, int seconds) {
+	servo[dropServo] = position;
+	wait1Msec(seconds);
+	servo[dropServo] = 0;
+}
+
 ////////////////////////////// Task Definitions ///////////////////////////
 
 // starts the gyro
@@ -257,15 +305,13 @@ task a_readIR() {
 
 // drops the clamp
 task a_dropClamp() {
-	if(irDetected) {
-		servo[clampServo] = 120;
-	}
+	servo[clampServo] = 120;
 	wait1Msec(1);
 }
 
 // starts the pickup
 task a_startPickup() {
-	startPickUP();
+	startPickup();
 	wait1Msec(1);
 }
 
@@ -281,3 +327,40 @@ task a_stopPickup() {
 	wait1Msec(1);
 }
 
+// raises the lift
+task a_raiseLiftGoal() {
+	raiseLift(timeGoal);
+	position = goal;
+	wait1Msec(1);
+}
+
+// raises the lift to the center
+task a_raiseLiftCenter() {
+	raiseLift(timeCenter);
+	position = center;
+	wait1Msec(1);
+}
+
+// lowers the lift
+task a_lowerLift() {
+	if(position == goal) {
+		lowerLift(timeGoal);
+	}
+	if(position == center) {
+		lowerLift(timeCenter);
+	}
+	position = down;
+	wait1Msec(1);
+}
+
+// drops one ball
+task a_dropOneBall() {
+	dropBall(positionOneBall, timeOneBall);
+	wait1Msec(1);
+}
+
+// drops five ball
+task a_dropFiveBall() {
+	dropBall(positionFiveBall, timeFiveBall);
+	wait1Msec(1);
+}
