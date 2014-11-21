@@ -21,12 +21,15 @@
 
 float wheelSize = 14.6; // in cm
 float gearRatio = 2;
-float vel_curr = 0.0;
-float vel_prev = 0.0;
-float dt = 0.0;
-int timer_gyro = 0;
-float heading = 0.0;
+float g_vel_curr = 0.0;
+float d_vel_curr = 0.0;
+float g_vel_prev = 0.0;
+float d_vel_prev = 0.0;
+float g_dt = 0.0;
+float d_dt = 0.0;
+float orientation = 0.0;
 float error;
+float distanceTraveled = 0.0;
 float fullPower = 100;
 bool irDetected = false;
 int timeGoal = 2 * 1000;
@@ -35,6 +38,8 @@ int timeOneBall = 100;
 int timeFiveBall = 2 * 1000;
 int positionOneBall = 50;
 int positionFiveBall = 255;
+int timer_gyro = 0;
+int timer_distance = 0;
 typedef enum Position {
 	goal,
 	center,
@@ -71,6 +76,8 @@ void dropBall(int position, int seconds);
 
 // starts the gyro
 task a_gyro();
+// PID!!!!!
+task a_DistancePID();
 // rasises the ir sensor
 task a_raiseIR();
 // lowers the ir sensor
@@ -101,21 +108,13 @@ task a_dropFiveBall();
 // turns the robot to the left
 void turnLeft(float degrees) {
 	bool isTurning = true;
-	float startOrientation = heading;
-	float currentOrientation = heading;
-	float target = startOrientation + degrees;
+	float target = orientation + degrees;
 	float power, power_neg;
 	float kP = 5.7;
-	bool isFineTune = false;
 	float finish_timer = 0.0;
-	int timer_timeout = 0.0;
-	float timeout_threshold = 3000.0;
 
-	Time_ClearTimer(timer_timeout);
-
-	while(isTurning && Time_GetTime(timer_timeout) < timeout_threshold) {
-		currentOrientation = heading;
-		error = target - currentOrientation;
+	while(isTurning) {
+		error = target - orientation;
 		if(error > 60)
 			power = fullPower;
 		else if(error < 60)
@@ -132,11 +131,7 @@ void turnLeft(float degrees) {
 		motor[leftWheel] = power_neg;
 		motor[rightWheel] = power;
 		if(abs(error) < 2.5) {
-			if(isFineTune == false) {
-				Time_ClearTimer(finish_timer);
-				isFineTune = true;
-			}
-			else if(Time_GetTime(finish_timer) > 500)
+            if(Time_GetTime(finish_timer) > 500)
 				isTurning = false;
 		}
 		if(Time_GetTime(timer_timeout) > timeout_threshold) {
@@ -159,6 +154,34 @@ void turnRight(float degrees) {
 }
 
 // drives the robot forward
+void driveForward(float distance) {
+    float target = distanceTraveled + distance / wheelSize / gearRatio / 1440 / 2 / PI;
+    bool isMoving = true;
+    while(isMoving) {
+        error = target - distanceTraveled;
+        if(error > 500) {
+            power = fullPower;
+        }
+        else if(error < -500) {
+            power = -fullPower;
+        }
+        else if(error > 150) {
+            power = 15;
+        }
+        else if(error < -150) {
+            power = -15
+        }
+        motor[leftWheel] = power;
+        motor[rightWheel] = power;
+        if(abs(error < 150)) {
+            motor[leftWheel] = 0;
+            motor[rightWheel] = 0;
+            isMoving = false;
+        }
+    }
+    wait1Msec(1);
+}
+/*
 void driveForward(float distance) {
 	float target = distance / wheelSize / gearRatio / 1440 / 2 / PI; // is in revolutions
 	//float kP = 0.03;
@@ -193,7 +216,7 @@ void driveForward(float distance) {
 				power = 15;
 			else if(power < 0)
 				power = -15;
-		}*/
+		}
 
 		motor[leftWheel] = power;
 		motor[rightWheel] = power;
@@ -206,7 +229,7 @@ void driveForward(float distance) {
 		}
 	}
 	wait1Msec(1);
-}
+}*/
 
 // moves the robot forward
 void driveBackward(float distance) {
@@ -274,15 +297,29 @@ void dropBall(int position, int seconds) {
 task a_gyro() {
 	Time_ClearTimer(timer_gyro);
 	while (true) {
-		vel_prev = vel_curr;
-		dt = (float)Time_GetTime(timer_gyro) /1000.0;
+		g_vel_prev = g_vel_curr;
+		g_dt = (float)Time_GetTime(timer_gyro) /1000.0;
 		Time_ClearTimer(timer_gyro);
-		vel_curr = (float)HTGYROreadRot(gyroSensor);
-		heading += (vel_prev+vel_curr)*0.5*dt;
+		g_vel_curr = (float)HTGYROreadRot(gyroSensor);
+		orientation += (g_vel_prev + g_vel_curr) * 0.5 * g_dt;
 		wait1Msec(1);
 	}
 }
 
+// PID!!!!
+task a_DistancePID() {
+    Time_ClearTimer(timer_distance);
+    timePassed = Time_GetTime(timer_distance);
+
+    while(true) {
+        d_vel_prev = d_vel_curr;
+        d_dt = (float)Time_GetTime(timerPID) / 1000.0;
+        Time_ClearTimer(timer_distance);
+        d_vel_curr = (float)(Motor_GetEncoder(leftWheel) + Motor_GetEncoder(rightWheel)) / 2;
+        distanceTraveled += (d_vel_prev + d_vel_curr) * .5 * d_dt;
+        wait1Msec(1);
+    }
+}
 // raises the ir sensor
 task a_raiseIR() {
 	servo[irServo] = 255;
