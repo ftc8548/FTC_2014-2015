@@ -69,7 +69,7 @@ task main() {
 				isLift = true;
 				Task_Spawn(t_raiseLiftSlightly);
 			}
-			if(Joystick_ButtonReleased(BUTTON_RB, CONTROLLER_2)) {
+			else if(Joystick_ButtonReleased(BUTTON_RB, CONTROLLER_2)) {
 				isLift = false;
 				Task_Kill(t_raiseLiftSlightly);
 			}
@@ -79,7 +79,7 @@ task main() {
 				isLift = true;
 				Task_Spawn(t_lowerLiftSlightly);
 			}
-			if(Joystick_ButtonReleased(BUTTON_LB, CONTROLLER_2)) {
+			else if(Joystick_ButtonReleased(BUTTON_LB, CONTROLLER_2)) {
  				isLift = false;
  				Task_Kill(t_lowerLiftSlightly);
  			}

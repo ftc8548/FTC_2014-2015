@@ -3,7 +3,7 @@
 #pragma config(Sensor, S3,     irSensor,       sensorHiTechnicIRSeeker600)
 #pragma config(Motor,  mtr_S1_C1_1,     leftWheel,     tmotorTetrix, openLoop, encoder)
 #pragma config(Motor,  mtr_S1_C1_2,     firstPickupMotor,   tmotorTetrix, openLoop)
-#pragma config(Motor,  mtr_S1_C2_1,     rightWheel,    tmotorTetrix, openLoop, reversed, encoder)
+#pragma config(Motor,  mtr_S1_C2_1,     rightWheel,    tmotorTetrix, openLoop,  encoder)
 #pragma config(Motor,  mtr_S1_C2_2,     liftMotor,          tmotorTetrix, openLoop, reversed)
 #pragma config(Motor,  mtr_S1_C4_1, 	secondPickupMotor,	tmotorTetrix, openLoop)
 #pragma config(Motor,  mtr_S1_C4_2,     liftMotor,     tmotorTetrix, openLoop)
@@ -31,7 +31,7 @@ float d_dt = 0.0;
 float orientation = 0.0;
 float error;
 float distanceTraveled = 0.0;
-float fullPower = 100;
+float fullPower = 30;
 bool irDetected = false;
 int dropPower = -50;
 int timeDropGoal = 1.5 * 1000;
@@ -244,7 +244,7 @@ void checkIR() {
 // starts the pickup
 void startPickup() {
 	while(true) {
-		motor[firstPickupMotor] = 100;
+		motor[firstPickupMotor] = 50;
 		motor[secondPickupMotor] = 100;
 	}
 	wait1Msec(1);
@@ -253,7 +253,7 @@ void startPickup() {
 // reverses the pickup
 void reversePickup() {
 	while(true) {
-		motor[firstPickupMotor] = -100;
+		motor[firstPickupMotor] = -50;
 		motor[secondPickupMotor] = -100;
 	}
 	wait1Msec(1);

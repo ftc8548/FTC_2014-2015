@@ -93,7 +93,7 @@ void raiseLift(int seconds) {
 // raises the lift
 void raiseLift(bool isLift) {
 	while(isLift) {
-		motor[liftMotor] = 50;
+		motor[liftMotor] = 100;
 	}
 	motor[liftMotor] = 0;
 	wait1Msec(1);
@@ -126,16 +126,18 @@ void lowerLift(int r_position) {
 // lowers the lift
 void lowerLift(bool isLift) {
 	while(isLift) {
-		motor[liftMotor] = -50;
+		motor[liftMotor] = -100;
 	}
-	motor[liftMotor] = 0;
+	if(!isLift) {
+		motor[liftMotor] = 0;
+	}
 	wait1Msec(1);
 }
 
 // picks up balls
 void startPickup() {
 	while(true) {
-		motor[firstPickupMotor] = 100;
+		motor[firstPickupMotor] = 50;
 		motor[secondPickupMotor] = 100;
 		isPickup = true;
 	}
@@ -145,7 +147,7 @@ void startPickup() {
 // releases balls from the pickup
 void reversePickup() {
 	while(true) {
-		motor[firstPickupMotor] = -100;
+		motor[firstPickupMotor] = -50;
 		motor[secondPickupMotor] = -100;
 		isPickup = true;
 	}
@@ -174,12 +176,12 @@ void raiseClamp() {
 
 // drops the balls
 void dropBall() {
-	servo[dropServo] = 255;
+	servo[dropServo] = 55;
 }
 
 // resets the drop servo
 void resetDrop() {
-	servo[dropServo] = 0;
+	servo[dropServo] = 15;
 }
 
 /////////////////////////////// Task Definitions ////////////////////

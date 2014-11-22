@@ -3,7 +3,7 @@
 #pragma config(Sensor, S3,     irSensor,       sensorHiTechnicIRSeeker600)
 #pragma config(Motor,  mtr_S1_C1_1,     leftWheel,     tmotorTetrix, openLoop, encoder)
 #pragma config(Motor,  mtr_S1_C1_2,     firstPickupMotor,   tmotorTetrix, openLoop)
-#pragma config(Motor,  mtr_S1_C2_1,     rightWheel,    tmotorTetrix, openLoop, reversed, encoder)
+#pragma config(Motor,  mtr_S1_C2_1,     rightWheel,    tmotorTetrix, openLoop, encoder)
 #pragma config(Motor,  mtr_S1_C2_2,     liftMotor,          tmotorTetrix, openLoop, reversed)
 #pragma config(Motor,  mtr_S1_C4_1, 	secondPickupMotor,	tmotorTetrix, openLoop)
 #pragma config(Motor,  mtr_S1_C4_2,     liftMotor,     tmotorTetrix, openLoop)
@@ -25,7 +25,7 @@ task main() {
 	Task_Spawn(a_gyro);
 	Task_Spawn(a_DistancePID);
 	Task_Spawn(a_raiseIR);
-	Task_Spawn(a_readIR);
+	/*Task_Spawn(a_readIR);
 	// grab a rolling goal here
 	driveBackward(100);
 	Task_Spawn(a_dropClamp);
@@ -35,6 +35,7 @@ task main() {
 	Task_Spawn(a_dropOneBall);
 	// lowers the lift
 	Task_Spawn(a_lowerLift);
+	*/
 
 	// drive to the center
 	while(!irDetected) {
