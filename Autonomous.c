@@ -23,8 +23,21 @@ task main() {
 	Joystick_WaitForStart();
 
 	Task_Spawn(a_gyro);
-	Task_Spawn(a_DistancePID);
-	Task_Spawn(a_raiseIR);
+	Task_Spawn(a_findDistance);
+	while(orientation < 90) {
+		motor[rightWheel] = 100;
+		motor[leftWheel] = -100;
+	}
+	motor[rightWheel] = 0;
+	motor[leftWheel] = 0;
+	wait1Msec(2000);
+	while(abs(distanceTraveled) < 40) {
+		motor[rightWheel] = 100;
+		motor[leftWheel] = 100;
+	}
+
+	//Task_Spawn(a_findDistance);
+	//Task_Spawn(a_raiseIR);
 	/*Task_Spawn(a_readIR);
 	// grab a rolling goal here
 	driveBackward(100);

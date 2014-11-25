@@ -28,7 +28,14 @@ const int timeDropGoal1 = 0.5 * 1000;
 const int timeDropGoal2 = 1.5 * 1000;
 const int timeDropGoal3 = 2.5 * 1000;
 const int timeDropGoal4 = 3.5 * 1000;
-const int dropPower = -50;
+const int liftPower = -60;
+const int dropPower = 20;
+const int pickupPower = -35;
+const int stopPower = 0;
+const int startPosClamp = 0;
+const int endPosClamp = 120;
+const int startPosDrop = 0;
+const int endPosDrop = 35;
 bool isLift = false;
 bool isPickup = false;
 bool isTurning = false;
@@ -49,20 +56,14 @@ void raiseLift(bool isLift);
 // lowers the lift
 void lowerLift(int r_position);
 void lowerLift(bool isLift);
+// stops the lift
+void stopLift();
 // starts the pickup
 void startPickup();
 // reverses the pickup
 void reversePickup();
 // stops the pickup
 void stopPickup();
-// drops the clamp
-void dropClamp();
-// raises the clamp
-void raiseClamp();
-// drops the balls
-void dropBall();
-// resets the ball drop
-void resetDrop();
 
 /////////////////////////// Task Declarations ///////////////////////
 
@@ -73,6 +74,7 @@ task t_raiseLiftCenter();
 task t_lowerLift();
 task t_lowerLiftSlightly();
 task t_raiseLiftSlightly();
+task t_stopLift();
 task t_startPickup();
 task t_reversePickup();
 task t_stopPickup();
@@ -85,17 +87,16 @@ task t_resetDrop();
 
 // raises the lift
 void raiseLift(int seconds) {
-	motor[liftMotor] = 100;
+	motor[liftMotor] = liftPower;
 	wait1Msec(seconds);
-	motor[liftMotor] = 0;
+	motor[liftMotor] = stopPower;
 }
 
 // raises the lift
 void raiseLift(bool isLift) {
-	while(isLift) {
-		motor[liftMotor] = 100;
+	while(true) {
+		motor[liftMotor] = liftPower;
 	}
-	motor[liftMotor] = 0;
 	wait1Msec(1);
 }
 
@@ -119,26 +120,29 @@ void lowerLift(int r_position) {
 		default:
 			break;
 	}
-	motor[liftMotor] = 0;
+	motor[liftMotor] = stopPower;
 	isLift = false;
 }
 
 // lowers the lift
 void lowerLift(bool isLift) {
-	while(isLift) {
-		motor[liftMotor] = -100;
+	while(true) {
+		motor[liftMotor] = dropPower;
 	}
-	if(!isLift) {
-		motor[liftMotor] = 0;
-	}
+	wait1Msec(1);
+}
+
+// stops the lift
+void stopLift() {
+	motor[liftMotor] = stopPower;
 	wait1Msec(1);
 }
 
 // picks up balls
 void startPickup() {
 	while(true) {
-		motor[firstPickupMotor] = 50;
-		motor[secondPickupMotor] = 100;
+		motor[firstPickupMotor] = pickupPower;
+		motor[secondPickupMotor] = pickupPower;
 		isPickup = true;
 	}
 	wait1Msec(1);
@@ -147,8 +151,8 @@ void startPickup() {
 // releases balls from the pickup
 void reversePickup() {
 	while(true) {
-		motor[firstPickupMotor] = -50;
-		motor[secondPickupMotor] = -100;
+		motor[firstPickupMotor] = -pickupPower;
+		motor[secondPickupMotor] = -pickupPower;
 		isPickup = true;
 	}
 	wait1Msec(1);
@@ -156,32 +160,22 @@ void reversePickup() {
 
 // stops the pickup
 void stopPickup() {
-	motor[firstPickupMotor] = 0;
-	motor[secondPickupMotor] = 0;
+	motor[firstPickupMotor] = stopPower;
+	motor[secondPickupMotor] = stopPower;
 	isPickup = false;
 	wait1Msec(1);
 }
 
 // drops the clamp
 void dropClamp() {
-	servo[clampServo] = 120;
+	servo[clampServo] = endPosClamp;
 	wait1Msec(1);
 }
 
 // raises the clamp
 void raiseClamp() {
-	servo[clampServo] = 0;
+	servo[clampServo] = startPosClamp;
 	wait1Msec(1);
-}
-
-// drops the balls
-void dropBall() {
-	servo[dropServo] = 55;
-}
-
-// resets the drop servo
-void resetDrop() {
-	servo[dropServo] = 15;
 }
 
 /////////////////////////////// Task Definitions ////////////////////
@@ -228,6 +222,12 @@ task t_raiseLiftSlightly() {
 	wait1Msec(1);
 }
 
+// stops the lift
+task t_stopLift() {
+	stopLift();
+	wait1Msec(1);
+}
+
 // pick up balls
 task t_startPickup() {
 	startPickup();
@@ -247,24 +247,24 @@ task t_stopPickup() {
 
 // drops the clamp
 task t_dropClamp() {
-	dropClamp();
+	servo[clampServo] = endPosClamp;
 	wait1Msec(1);
 }
 
 // raises the clamp
 task t_raiseClamp() {
-	raiseClamp();
+	servo[clampServo] = startPosClamp;
 	wait1Msec(1);
 }
 
 // drops the balls
 task t_dropBall() {
-	dropBall();
+	servo[dropServo] = endPosDrop;
 	wait1Msec(1);
 }
 
 // resets the drop servo
 task t_resetDrop() {
-	resetDrop();
+	servo[dropServo] = startPosDrop;
 	wait1Msec(1);
 }

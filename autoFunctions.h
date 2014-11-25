@@ -1,4 +1,4 @@
-#pragma config(Hubs,  S1, HTMotor,  HTMotor,  HTServo,  HTMotor)
+#pragma config(Hubs,   S1, HTMotor,  HTMotor,  HTServo,  HTMotor)
 #pragma config(Sensor, S2,     gyroSensor,     sensorI2CHiTechnicGyro)
 #pragma config(Sensor, S3,     irSensor,       sensorHiTechnicIRSeeker600)
 #pragma config(Motor,  mtr_S1_C1_1,     leftWheel,     tmotorTetrix, openLoop, encoder)
@@ -20,12 +20,21 @@
 
 ///////////////////////// Global Variables //////////////////////////
 
+const int endIRPos = 120;
+const int startIRPos = 0;
+const int liftPower = 60;
+const int dropPower = -50;
+const int pickupPower = 35;
+const int stopPower = 0;
+const int startPosClamp = 0;
+const int endPosClamp = 120;
+const int startPosDrop = 15;
+const int endPosDrop = 55;
 float wheelSize = 14.6; // in cm
 float gearRatio = 2;
 float g_vel_curr = 0.0;
 float d_vel_curr = 0.0;
 float g_vel_prev = 0.0;
-float d_vel_prev = 0.0;
 float g_dt = 0.0;
 float d_dt = 0.0;
 float orientation = 0.0;
@@ -33,7 +42,6 @@ float error;
 float distanceTraveled = 0.0;
 float fullPower = 30;
 bool irDetected = false;
-int dropPower = -50;
 int timeDropGoal = 1.5 * 1000;
 int timeDropCenter = 3.5 * 1000;
 int timeRaiseGoal = 2 * 1000;
@@ -81,7 +89,7 @@ void dropBall(int position, int seconds);
 // starts the gyro
 task a_gyro();
 // PID!!!!!
-task a_DistancePID();
+task a_findDistance();
 // rasises the ir sensor
 task a_raiseIR();
 // lowers the ir sensor
@@ -114,14 +122,17 @@ void turnLeft(float degrees) {
 	bool isTurning = true;
 	float target = orientation + degrees;
 	float power, power_neg;
-	float kP = 5.7;
+	float kP = 3.0;
 	float finish_timer = 0.0;
 
 	while(isTurning) {
 		error = target - orientation;
-		if(error > 60)
+		if(abs(error) < 2.5) {
+				isTurning = false;
+		}
+		if(error > 40)
 			power = fullPower;
-		else if(error < 60)
+		else if(error < 40)
 			power = -fullPower;
 		else
 			power = kP * error;
@@ -134,11 +145,7 @@ void turnLeft(float degrees) {
 		power_neg = -power;
 		motor[leftWheel] = power_neg;
 		motor[rightWheel] = power;
-		if(abs(error) < 2.5) {
-				isTurning = false;
-		}
 	}
-
 	motor[leftWheel] = 0;
 	motor[rightWheel] = 0;
 }
@@ -177,55 +184,6 @@ void driveForward(float distance) {
     }
     wait1Msec(1);
 }
-/*
-void driveForward(float distance) {
-	float target = distance / wheelSize / gearRatio / 1440 / 2 / PI; // is in revolutions
-	//float kP = 0.03;
-	float power = 0.0;
-	bool isMoving = true;
-	int timer_timeout = 0;
-	int timer_threshold = 3000;
-	float pos_avg;
-	Time_ClearTimer(timer_timeout);
-
-	Motor_ResetEncoder(leftWheel);
-	Motor_ResetEncoder(rightWheel);
-
-	while(isMoving) {
-		pos_avg = (Motor_GetEncoder(leftWheel) - Motor_GetEncoder(rightWheel)) / 2.0;
-		error = target - pos_avg;
-		if(error > 0) {
-			power = fullPower;
-		}
-		else {
-			power = -fullPower;
-		}
-
-		/*if(error > 3000)
-			power = fullPower;
-		else if(error < -3000)
-			power = -fullPower;
-		else
-			power = kP*error;
-		if(abs(power) < 10) {
-			if(power > 0)
-				power = 15;
-			else if(power < 0)
-				power = -15;
-		}
-
-		motor[leftWheel] = power;
-		motor[rightWheel] = power;
-		if(abs(error) < 150)
-			isMoving = false;
-		if(Time_GetTime(timer_timeout) > timer_threshold) {
-			isMoving = false;
-			motor[leftWheel] = 0;
-			motor[rightWheel] = 0;
-		}
-	}
-	wait1Msec(1);
-}*/
 
 // moves the robot forward
 void driveBackward(float distance) {
@@ -244,8 +202,8 @@ void checkIR() {
 // starts the pickup
 void startPickup() {
 	while(true) {
-		motor[firstPickupMotor] = 50;
-		motor[secondPickupMotor] = 100;
+		motor[firstPickupMotor] = pickupPower;
+		motor[secondPickupMotor] = pickupPower;
 	}
 	wait1Msec(1);
 }
@@ -253,38 +211,38 @@ void startPickup() {
 // reverses the pickup
 void reversePickup() {
 	while(true) {
-		motor[firstPickupMotor] = -50;
-		motor[secondPickupMotor] = -100;
+		motor[firstPickupMotor] = -pickupPower;
+		motor[secondPickupMotor] = -pickupPower;
 	}
 	wait1Msec(1);
 }
 
 // stops the pickup
 void stopPickup() {
-	motor[firstPickupMotor] = 0;
-	motor[secondPickupMotor] = 0;
+	motor[firstPickupMotor] = stopPower;
+	motor[secondPickupMotor] = stopPower;
 	wait1Msec(1);
 }
 
 // raises the lift
 void raiseLift(int seconds) {
-	motor[liftMotor] = 100;
+	motor[liftMotor] = liftPower;
 	wait1Msec(seconds);
-	motor[liftMotor] = 0;
+	motor[liftMotor] = stopPower;
 }
 
 // lowers the lift
 void lowerLift(int seconds) {
 	motor[liftMotor] = dropPower;
 	wait1Msec(seconds);
-	motor[liftMotor] = 0;
+	motor[liftMotor] = stopPower;
 }
 
 // drops one ball
 void dropBall(int position, int seconds) {
-	servo[dropServo] = position;
+	servo[dropServo] = endPosDrop;
 	wait1Msec(seconds);
-	servo[dropServo] = 0;
+	servo[dropServo] = startPosDrop;
 }
 
 ////////////////////////////// Task Definitions ///////////////////////////
@@ -294,37 +252,37 @@ task a_gyro() {
 	Time_ClearTimer(timer_gyro);
 	while (true) {
 		g_vel_prev = g_vel_curr;
-		g_dt = (float)Time_GetTime(timer_gyro) /1000.0;
+		g_dt = (float)Time_GetTime(timer_gyro) / 1000;
 		Time_ClearTimer(timer_gyro);
 		g_vel_curr = (float)HTGYROreadRot(gyroSensor);
-		orientation += (g_vel_prev + g_vel_curr) * 0.5 * g_dt;
+		//orientation += (g_vel_prev + g_vel_curr) * 0.5 * g_dt;
+		orientation += g_vel_curr * g_dt;
 		wait1Msec(1);
 	}
 }
 
-// PID!!!!
-task a_DistancePID() {
+// Distance Travelled!
+task a_findDistance() {
     Time_ClearTimer(timer_distance);
 
     while(true) {
-        d_vel_prev = d_vel_curr;
         d_dt = (float)Time_GetTime(timer_distance) / 1000.0;
         Time_ClearTimer(timer_distance);
         d_vel_curr = (float)(Motor_GetEncoder(leftWheel) + Motor_GetEncoder(rightWheel)) / 2;
-        distanceTraveled += (d_vel_prev + d_vel_curr) * .5 * d_dt;
+        distanceTraveled += d_vel_curr * d_dt;
         wait1Msec(1);
     }
 }
 
 // raises the ir sensor
 task a_raiseIR() {
-	servo[irServo] = 255;
+	servo[irServo] = endIRPos;
 	wait1Msec(1);
 }
 
 // lowers the ir sensor
 task a_lowerIR() {
-	servo[irServo] = 0;
+	servo[irServo] = startIRPos;
 	wait1Msec(1);
 }
 
