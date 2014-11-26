@@ -18,7 +18,7 @@
 
 #include "includes.h"
 
-///////////////////////// Global Variables //////////////////////////
+///////////////////////// Changable Variables //////////////////////////
 
 const int endIRPos = 120;
 const int startIRPos = 0;
@@ -30,8 +30,20 @@ const int startPosClamp = 0;
 const int endPosClamp = 120;
 const int startPosDrop = 15;
 const int endPosDrop = 55;
-float wheelSize = 14.6; // in cm
-float gearRatio = 2;
+const float wheelSize = 14.6; // in cm
+const float circumference = wheelSize * PI;
+const float gearRatio = 2;
+const float fullPower = 30;
+const int timeDropGoal = 1.5 * 1000;
+const int timeDropCenter = 3.5 * 1000;
+const int timeRaiseGoal = 2 * 1000;
+const int timeRaiseCenter = 4 * 1000;
+const int timeOneBall = 100;
+const int timeFiveBall = 2 * 1000;
+const int positionOneBall = 50;
+const int positionFiveBall = 255;
+
+/////////////////////// Don't change these variables ///////////////////
 float g_vel_curr = 0.0;
 float d_vel_curr = 0.0;
 float g_vel_prev = 0.0;
@@ -40,16 +52,7 @@ float d_dt = 0.0;
 float orientation = 0.0;
 float error;
 float distanceTraveled = 0.0;
-float fullPower = 30;
 bool irDetected = false;
-int timeDropGoal = 1.5 * 1000;
-int timeDropCenter = 3.5 * 1000;
-int timeRaiseGoal = 2 * 1000;
-int timeRaiseCenter = 4 * 1000;
-int timeOneBall = 100;
-int timeFiveBall = 2 * 1000;
-int positionOneBall = 50;
-int positionFiveBall = 255;
 int timer_gyro = 0;
 int timer_distance = 0;
 typedef enum Position {
@@ -157,7 +160,7 @@ void turnRight(float degrees) {
 
 // drives the robot forward
 void driveForward(float distance) {
-    float target = distanceTraveled + distance / wheelSize / gearRatio / 1440 / 2 / PI;
+    float target = distanceTraveled + (distance / circumference / gearRatio / 1440);
     bool isMoving = true;
     int power;
     while(isMoving) {
