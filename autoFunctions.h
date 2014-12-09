@@ -22,8 +22,9 @@
 
 const int endIRPos = 120;
 const int startIRPos = 0;
-const int liftPower = 60;
-const int dropPower = -50;
+const int fullPower = 100;
+const int liftRaisePower = 60;
+const int liftLowerPower = 40;
 const int pickupPower = 35;
 const int stopPower = 0;
 const int startPosClamp = 0;
@@ -36,11 +37,8 @@ const float d_circumference = d_wheelDiam * PI;
 const float l_circumference = l_wheelDiam * PI;
 const float d_gearRatio = 2.0;
 const float l_gearRatio = 1.0;
-const float fullPower = 30;
-const int timeDropGoal = 1.5 * 1000;
-const int timeDropCenter = 3.5 * 1000;
-const int timeRaiseGoal = 2 * 1000;
-const int timeRaiseCenter = 4 * 1000;
+const int distanceGoal = 60;
+const int distanceCenter = 90;
 const int timeOneBall = 100;
 const int timeFiveBall = 2 * 1000;
 const int positionOneBall = 50;
@@ -234,22 +232,22 @@ void driveForward(float distance) {
       if(PIDValue > 500) {
       	d_power = fullPower;
       }
-        else if(PIDValue < -500) {
-            d_power = -fullPower;
-        }
-        else if(PIDValue > 150) {
-            d_power = 15;
-        }
-        else if(PIDValue < -150) {
-            d_power = -15;
-        }
-        motor[leftWheel] = d_power;
-        motor[rightWheel] = d_power;
-        if(abs(PIDValue) < 50) {
-            motor[leftWheel] = 0;
-            motor[rightWheel] = 0;
-            isMoving = false;
-        }
+      else if(PIDValue < -500) {
+      	d_power = -fullPower;
+      }
+      else if(PIDValue > 150) {
+        d_power = 15;
+      }
+      else if(PIDValue < -150) {
+        d_power = -15;
+      }
+      motor[leftWheel] = d_power;
+      motor[rightWheel] = d_power;
+      if(abs(PIDValue) < 50) {
+          motor[leftWheel] = 0;
+          motor[rightWheel] = 0;
+          isMoving = false;
+      }
     }
     // motor[leftWheel] = 0;
     // motor[rightWheel] = 0;
@@ -295,7 +293,7 @@ void stopPickup() {
 }
 
 // raises the lift
-void raiseLift(float distance) {
+void raiseLift(float distance, int maxPower) {
 	float target = l_distanceTraveled + (distance / l_circumference / l_gearRatio / 360);
   bool isLifting = true;
   int power = 0.0;
@@ -329,20 +327,32 @@ void raiseLift(float distance) {
     for(int i = 0; i < errorCount - 1; i++) {
     	i_errorValue += i_error[i];
     }
-  PIDValue = kP * currError + kI * i_errorValue;
-	}
+  	PIDValue = kP * currError + kI * i_errorValue;
 
-	if(PIDValue > 500) {
-		l_power = fullPower;
+		if(PIDValue > 500) {
+			l_power = maxPower;
+		}
+		else if(PIDValue < 500) {
+			l_power = -maxPower;
+		}
+		else if(PIDValue > 150) {
+			l_power = 40;
+		}
+		else if(PIDValue < -150) {
+			l_power = -40;
+		}
+		else {
+			l_power = 0;
+			isLifting = false;
+		}
+		motor[liftMotor] = l_power;
 	}
-	else if (PIDValue
+	motor[liftMotor] = 0;
 }
 
 // lowers the lift
-void lowerLift(float distance) {
-	motor[liftMotor] = dropPower;
-	wait1Msec(distance);
-	motor[liftMotor] = stopPower;
+void lowerLift(float distance, int maxPower) {
+	raiseLift(-distance, maxPower);
 }
 
 // drops one ball
@@ -438,14 +448,14 @@ task a_stopPickup() {
 
 // raises the lift
 task a_raiseLiftGoal() {
-	raiseLift(timeRaiseGoal);
+	raiseLift(distanceGoal, liftRaisePower);
 	position = goal;
 	wait1Msec(1);
 }
 
 // raises the lift to the center
 task a_raiseLiftCenter() {
-	raiseLift(timeRaiseCenter);
+	raiseLift(distanceCenter, liftRaisePower);
 	position = center;
 	wait1Msec(1);
 }
@@ -453,10 +463,10 @@ task a_raiseLiftCenter() {
 // lowers the lift
 task a_lowerLift() {
 	if(position == goal) {
-		lowerLift(timeDropGoal);
+		lowerLift(distanceGoal, liftLowerPower);
 	}
 	if(position == center) {
-		lowerLift(timeDropCenter);
+		lowerLift(distanceCenter, liftLowerPower);
 	}
 	position = down;
 	wait1Msec(1);

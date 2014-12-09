@@ -19,11 +19,19 @@
 #include "includes.h"
 #include "autoFunctions.h"
 
+typedef enum GoalPosition {
+	goalPos1,
+	goalPos2,
+	goalPos3
+};
+GoalPosition goalPosition;
+
 task main() {
 	Joystick_WaitForStart();
 
 	Task_Spawn(a_gyro);
 	Task_Spawn(a_wheeEncoder);
+	Task_Spawn(a_liftEncoder);
 	while(orientation < 90) {
 		motor[rightWheel] = 100;
 		motor[leftWheel] = -100;
@@ -53,10 +61,10 @@ task main() {
 	// drive to the center
 	while(!irDetected) {
 		// ir detection stuff goes here
-		driveForward(40);
+		driveForward(20.0);
 		turnLeft(90);
 		turnRight(180);
-		driveBackward(40);
+		driveBackward(20.0);
 	}
 	// enter stuff for after ir detected here
 	// also known as putting balls into the rolling goals, knocking down the kickstand
@@ -81,8 +89,8 @@ task main() {
 	Task_Spawn(a_dropFiveBall);
 	Task_Spawn(a_lowerLift);
 
-	driveForward(40.0);
+	driveForward(10.0);
 	turnLeft(90.0);
 	turnRight(180.0);
-	driveForward(20);
+	driveForward(20.0);
 }
