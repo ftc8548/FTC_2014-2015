@@ -5,10 +5,10 @@
 #pragma config(Motor,  mtr_S1_C1_2,     firstPickupMotor,   tmotorTetrix, openLoop, reversed)
 #pragma config(Motor,  mtr_S1_C2_1,     rightWheel,    		tmotorTetrix, openLoop, reversed, encoder)
 #pragma config(Motor,  mtr_S1_C2_2,     liftMotor,          tmotorTetrix, openLoop, encoder)
-#pragma config(Motor,  mtr_S1_C4_1, 	secondPickupMotor,	tmotorTetrix, openLoop, reversed)
+#pragma config(Motor,  mtr_S1_C4_1, 		secondPickupMotor,	tmotorTetrix, openLoop, reversed)
 #pragma config(Motor,  mtr_S1_C4_2,     liftMotor,     		tmotorTetrix, openLoop)
 #pragma config(Servo,  srvo_S1_C3_1,    servo1,            tServoStandard)
-#pragma config(Servo,  srvo_S1_C3_2,    servo2,         tServoNone)
+#pragma config(Servo,  srvo_S1_C3_2,    servo2,         	tServoNone)
 #pragma config(Servo,  srvo_S1_C3_3,    dropServo,          tServoNone)
 #pragma config(Servo,  srvo_S1_C3_4,    clampServoR,             tServoNone)
 #pragma config(Servo,  srvo_S1_C3_5,    clampServoL,             tServoNone)
@@ -24,10 +24,10 @@ const int liftPower = 80;
 const int dropPower = -20;
 const int pickupPower = 40;
 const int stopPower = 0;
-const int startPosClampR = 240;
-const int startPosClampL = 10;
-const int endPosClampR = 110;
-const int endPosClampL = 110;
+const int startPosClampR = 110;
+const int startPosClampL = 110;
+const int endPosClampR = 240;
+const int endPosClampL = 10;
 const int startPosDrop = 250;
 const int endPosDrop = 180;
 ////////////////////////////// Don't Change These Variables //////////////
