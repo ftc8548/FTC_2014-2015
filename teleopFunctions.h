@@ -34,37 +34,22 @@ const int endPosDrop = 180;
 bool isLift = false;
 bool isPickup = false;
 bool isTurning = false;
-typedef enum Position {
-	upLow,
-	upMiddle,
-	upHigh,
-	upCenter,
-	down
-};
-Position position = down;
+float l_distanceTraveled = 0.0;
 
-///////////////////////////// Function Declarations ///////////////////
+/////////////////////////// Function Declarations //////////////////////
 
-// raises the lift
-void raiseLift(bool isLift);
-// lowers the lift
-void lowerLift(bool isLift);
-// stops the lift
-void stopLift();
-// starts the pickup
-void startPickup();
-// reverses the pickup
-void reversePickup();
+// gets the robot ready
+void getReady();
 
 /////////////////////////// Task Declarations ///////////////////////
-
+task t_liftEncoder();
 task t_raiseLiftLow();
 task t_raiseLiftMiddle();
 task t_raiseLiftHigh();
 task t_raiseLiftCenter();
 task t_lowerLift();
-task t_lowerLiftSlightly();
-task t_raiseLiftSlightly();
+task t_lowerLift();
+task t_raiseLift();
 task t_stopLift();
 task t_startPickup();
 task t_reversePickup();
@@ -74,39 +59,57 @@ task t_raiseClamp();
 task t_dropBall();
 task t_resetDrop();
 
-/////////////////////////// Function Definitions ///////////////////////
+////////////////////////// Function Definitions /////////////////////
 
-// raises the lift
-void raiseLift(int seconds) {
-	motor[liftMotor] = liftPower;
-	wait1Msec(seconds);
-	motor[liftMotor] = stopPower;
+// gets the robot ready
+void getReady() {
+	Task_Spawn(t_liftEncoder);		// starts the lift encoder
+	servo[dropServo] = startPosDrop; 	// resets drop servo
+	motor[firstPickupMotor] = stopPower; 	// stops the pickup
+	motor[secondPickupMotor] = stopPower; 	// stops the pickup
+	isPickup = false; 			// stops the pickup
 }
 
-// raises the lift
-void raiseLift(bool isLift) {
+/////////////////////////////// Task Definitions ////////////////////
+
+// tells position of the lift
+task t_liftEncoder() {
+	float l_vel_curr = 0.0;
+	float l_dt = 0.0;
+	Time_ClearTimer(timer_lift);
 	while(true) {
-		motor[liftMotor] = liftPower;
+		l_dt = (float)Time_GetTime(timer_lift) / 1000.0;
+		Time_ClearTimer(timer_lift);
+		l_vel_curr = (float)(Motor_GetEncoder(liftMotor));
+		l_distanceTraveled += l_vel_curr * l_dt;
+		wait1Msec(1);
 	}
-	wait1Msec(1);
 }
 
-// lowers the lift
-void lowerLift(bool isLift) {
+// raises the lift slightly
+task t_lowerLiftSlightly() {
 	while(true) {
 		motor[liftMotor] = dropPower;
 	}
 	wait1Msec(1);
 }
 
+// raises lift slightly
+task t_raiseLiftSlightly() {
+	while(true) {
+		motor[liftMotor] = liftPower;
+	}
+	wait1Msec(1);
+}
+
 // stops the lift
-void stopLift() {
+task t_stopLift() {
 	motor[liftMotor] = stopPower;
 	wait1Msec(1);
 }
 
-// picks up balls
-void startPickup() {
+// pick up balls
+task t_startPickup() {
 	while(true) {
 		motor[firstPickupMotor] = pickupPower;
 		motor[secondPickupMotor] = pickupPower;
@@ -115,45 +118,13 @@ void startPickup() {
 	wait1Msec(1);
 }
 
-// releases balls from the pickup
-void reversePickup() {
+// reverses the pickup
+task t_reversePickup() {
 	while(true) {
 		motor[firstPickupMotor] = -pickupPower;
 		motor[secondPickupMotor] = -pickupPower;
 		isPickup = true;
 	}
-	wait1Msec(1);
-}
-
-/////////////////////////////// Task Definitions ////////////////////
-
-// raises the lift slightly
-task t_lowerLiftSlightly() {
-	lowerLift(isLift);
-	wait1Msec(1);
-}
-
-// raises lift slightly
-task t_raiseLiftSlightly() {
-	raiseLift(isLift);
-	wait1Msec(1);
-}
-
-// stops the lift
-task t_stopLift() {
-	stopLift();
-	wait1Msec(1);
-}
-
-// pick up balls
-task t_startPickup() {
-	startPickup();
-	wait1Msec(1);
-}
-
-// reverese the pickup
-task t_reversePickup() {
-	reversePickup();
 	wait1Msec(1);
 }
 

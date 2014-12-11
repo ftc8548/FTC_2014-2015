@@ -24,7 +24,8 @@ task main() {
 
 	while (true) {
 		Joystick_UpdateData();
-
+		// preps the robot
+		getReady();
 			// driving segment
 
 		// the Left Joystick on Controller 1 controls the left wheel
@@ -32,28 +33,28 @@ task main() {
 		// the Right Joystick on Controller 1 controls the right wheel
 		motor[rightWheel] = Joystick_GenericInput(JOYSTICK_R, AXIS_Y, CONTROLLER_1);
 
-			// for minor lift changes
+			// for lift
 		// Holding RB on Controller 2 raises the lift
 		if(Joystick_Button(BUTTON_RB, CONTROLLER_2)) {
 			isLift = true;
-			Task_Spawn(t_raiseLiftSlightly);
+			Task_Spawn(t_raiseLift);
 		}
 		// Releasing RB on Controller 2 stops the lift
 		else if(Joystick_ButtonReleased(BUTTON_RB, CONTROLLER_2)) {
 			isLift = false;
-			Task_Kill(t_raiseLiftSlightly);
+			Task_Kill(t_raiseLift);
 			Task_Spawn(t_stopLift);
 		}
 
 		// Holding LB on Controller 2 lowers the lift
 		if(Joystick_Button(BUTTON_LB, CONTROLLER_2)) {
 			isLift = true;
-			Task_Spawn(t_lowerLiftSlightly);
+			Task_Spawn(t_lowerLift);
 		}
 		// Releasing LB on Controller 2 stops the lift
 		else if(Joystick_ButtonReleased(BUTTON_LB, CONTROLLER_2)) {
 			isLift = false;
-			Task_Kill(t_lowerLiftSlightly);
+			Task_Kill(t_lowerLift);
 			Task_Spawn(t_stopLift);
  		}
 
