@@ -55,8 +55,6 @@ void stopLift();
 void startPickup();
 // reverses the pickup
 void reversePickup();
-// stops the pickup
-void stopPickup();
 
 /////////////////////////// Task Declarations ///////////////////////
 
@@ -127,14 +125,6 @@ void reversePickup() {
 	wait1Msec(1);
 }
 
-// stops the pickup
-void stopPickup() {
-	motor[firstPickupMotor] = stopPower;
-	motor[secondPickupMotor] = stopPower;
-	isPickup = false;
-	wait1Msec(1);
-}
-
 /////////////////////////////// Task Definitions ////////////////////
 
 // raises the lift slightly
@@ -168,7 +158,9 @@ task t_reversePickup() {
 }
 
 task t_stopPickup() {
-	stopPickup();
+	motor[firstPickupMotor] = stopPower;
+	motor[secondPickupMotor] = stopPower;
+	isPickup = false;
 	wait1Msec(1);
 }
 

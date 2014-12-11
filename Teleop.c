@@ -56,12 +56,6 @@ task main() {
 			Task_Kill(t_lowerLiftSlightly);
 			Task_Spawn(t_stopLift);
  		}
-		// Pressing Start on Controller 2 stops the lift
- 		if(Joystick_Button(BUTTON_START, CONTROLLER_2)) {
- 			Task_Kill(t_lowerLiftSlightly);
- 			Task_Kill(t_raiseLiftSlightly);
- 			Task_Spawn(t_stopLift);
- 		}
 
 			// loop controlling the pickup
 		// Holding RT on Controller 1 picks up balls

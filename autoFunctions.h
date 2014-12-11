@@ -70,6 +70,8 @@ Position position = down;
 
 ///////////////////////////// Function Declarations //////////////////////
 
+// gets the robot ready
+void getReady();
 // turns the robot left
 void turnLeft(float degrees);
 // turns the robot right
@@ -128,6 +130,14 @@ task a_dropFiveBall();
 
 ///////////////////////////// Function Definitions ///////////////////////////
 
+// gets the robot ready
+void getReady() {
+	servo[clampServoL] = startPosClampL;
+	servo[clampServoR] = startPosClampR;
+	Task_Spawn(a_gyro);
+	Task_Spawn(a_wheelEncoder);
+	Task_Spawn(a_liftEncoder);
+}
 // turns the robot to the left
 void turnLeft(float degrees) {
 	bool isTurning = true;
@@ -381,7 +391,7 @@ task a_gyro() {
 }
 
 // Distance Travelled by robot
-task a_wheeEncoder() {
+task a_wheelEncoder() {
 	Time_ClearTimer(timer_distance);
   while(true) {
   	d_dt = (float)Time_GetTime(timer_distance) / 1000.0;

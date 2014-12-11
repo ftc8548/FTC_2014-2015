@@ -21,24 +21,25 @@
 
 const int power = 100;
 const int neg_power = -100;
-const int lipPower = -100;
-const int rampPower = -30;
-const int rampLipTime = 1000;
-const int rampTime = 1400;
+const int rampPower = -100;
+const int adjustPower = -10;
+const int rampTime = 1500;
+const int adjustTime = 500;
 
+void setPower(int power) {
+	motor[leftWheel] = power;
+	motor[rightWheel] = power;
+}
 
 task main() {
 	Joystick_WaitForStart();
-
-	motor[leftWheel] = lipPower;
-	motor[rightWheel] = lipPower;
-	wait1Msec(rampLipTime);
-	motor[leftWheel] = rampPower;
-	motor[rightWheel] = rampPower;
+	setPower(rampPower);
 	wait1Msec(rampTime);
+	setPower(adjustPower);
+	wait1Msec(adjustTime);
 
 
-	servo[clampServoR] = endPosClampR;
-	servo[clampServoL] = endPosClampL;
-	//Task_Spawn(a_dropClamp);
+	Task_Spawn(a_startPickup);
+
+	wait1Msec(1);
 }
