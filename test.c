@@ -59,6 +59,10 @@ task main() {
 	servoPrep();
 	Joystick_WaitForStart();
 	while(true) {
+		Task_Spawn(a_raiseIR);
+		while(true) {
+			Task_Spawn(a_startPickup);
+		}
 		/*setPower(-70);
 		wait1Msec(1500);
 		setPower(-30);
@@ -83,16 +87,18 @@ task main() {
 		wait1Msec(900);
 		Task_Spawn(a_dropClamp);
 		wait1Msec(900);*/
-		raiseLift();
+		/*raiseLift();
 		wait1Msec(2800);
 		stopLift();
 		wait1Msec(900);
 		Task_Spawn(a_dropBall);
+		wait1Msec(2500);
+		Task_Spawn(a_resetDrop);
 		lowerLift();
 		wait1Msec(3400);
 		stopLift();
 		//turnR();
-		//wait1Msec(500);
+		//wait1Msec(500);*/
 		break;
 	}
 

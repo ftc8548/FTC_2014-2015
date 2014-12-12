@@ -22,17 +22,17 @@
 ///////////////////////// Changable Variables //////////////////////////
 
 const int endIRPos = 120;
-const int startIRPos = 175;
+const int startIRPos = 35;
 const int fullPower = 0;
 const int liftRaisePower = 100;
 const int liftLowerPower = 40;
-const int pickupPower = 35;
+const int pickupPower = 50;
 const int startPosClampR = 110;
 const int startPosClampL = 110;
 const int endPosClampR = 240;
 const int endPosClampL = 10;
-const int startPosDrop = 10;
-const int endPosDrop = 180;
+const int startPosDrop = 100;
+const int endPosDrop = 230;
 const float d_wheelDiam = 14.6; // in cm
 const float l_wheelDiam = 10.0; // in cm
 const float d_circumference = d_wheelDiam * PI;
@@ -113,6 +113,8 @@ task a_dropOneBall();
 task a_dropFiveBall();
 // drops balls
 task a_dropBall();
+// resets drop
+task a_resetDrop();
 
 ///////////////////////////// Function Definitions ///////////////////////////
 
@@ -460,20 +462,21 @@ task a_lowerLift() {
 // drops one ball
 task a_dropOneBall() {
 	servo[dropServo] = endPosDrop;
-	wait1Msec(timeOneBall);
-	servo[dropServo] = startPosDrop;
 	wait1Msec(1);
 }
 
 // drops five ball
 task a_dropFiveBall() {
 	servo[dropServo] = endPosDrop;
-	wait1Msec(timeFiveBall);
-	servo[dropServo] = startPosDrop;
 	wait1Msec(1);
 }
 
 // drops balls
 task a_dropBall() {
 	servo[dropServo] = endPosDrop;
+}
+
+// reset drop
+task a_resetDrop() {
+	servo[dropServo] = startPosDrop;
 }

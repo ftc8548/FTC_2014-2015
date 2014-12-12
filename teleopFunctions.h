@@ -22,14 +22,14 @@
 
 const int liftPower = 10;
 const int dropPower = -30;
-const int pickupPower = 40;
+const int pickupPower = 50;
 const int stopPower = 0;
 const int startPosClampR = 110;
 const int startPosClampL = 110;
 const int endPosClampR = 240;
 const int endPosClampL = 10;
-const int startPosDrop = 250;
-const int endPosDrop = 180;
+const int startPosDrop = 100;
+const int endPosDrop = 230;
 ////////////////////////////// Don't Change These Variables //////////////
 bool isLift = false;
 bool isPickup = false;
