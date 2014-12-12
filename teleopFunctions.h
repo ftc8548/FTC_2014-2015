@@ -76,6 +76,7 @@ void getReady() {
 task t_liftEncoder() {
 	float l_vel_curr = 0.0;
 	float l_dt = 0.0;
+	int timer_lift;
 	Time_ClearTimer(timer_lift);
 	while(true) {
 		l_dt = (float)Time_GetTime(timer_lift) / 1000.0;
@@ -87,7 +88,7 @@ task t_liftEncoder() {
 }
 
 // raises the lift slightly
-task t_lowerLiftSlightly() {
+task t_lowerLift() {
 	while(true) {
 		motor[liftMotor] = dropPower;
 	}
@@ -95,7 +96,7 @@ task t_lowerLiftSlightly() {
 }
 
 // raises lift slightly
-task t_raiseLiftSlightly() {
+task t_raiseLift() {
 	while(true) {
 		motor[liftMotor] = liftPower;
 	}
