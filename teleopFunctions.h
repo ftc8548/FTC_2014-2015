@@ -20,8 +20,8 @@
 
 /////////////////////////////// Changable Variables ////////////////////
 
-const int liftPower = 80;
-const int dropPower = -20;
+const int liftPower = 10;
+const int dropPower = -30;
 const int pickupPower = 40;
 const int stopPower = 0;
 const int startPosClampR = 110;

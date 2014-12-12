@@ -18,6 +18,16 @@
 #include "includes.h"
 #include "teleopFunctions.h"
 
+/* 													So here are all the button commmands
+																					CONTROLLER 1
+						Left Joystick moves the left wheel, Right Joystick moves the right wheel
+						Right Trigger picks up balls, Left Trigger Releases balls
+																					CONTROLLER 2
+									Right Bumper raises the lift, Left Bumper lowers the lift
+												Button A drops clamp, Button B raises clamp
+												Button X drops balls, Button Y resets drop
+*/
+
 // main function
 task main() {
 	initializeGlobalVariables();

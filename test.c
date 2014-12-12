@@ -47,6 +47,10 @@ void raiseLift() {
 	motor[liftMotor] = 100;
 }
 
+void lowerLift() {
+	motor[liftMotor] = -30;
+}
+
 void stopLift() {
 	motor[liftMotor] = 0;
 }
@@ -55,7 +59,7 @@ task main() {
 	servoPrep();
 	Joystick_WaitForStart();
 	while(true) {
-		setPower(-70);
+		/*setPower(-70);
 		wait1Msec(1500);
 		setPower(-30);
 		wait1Msec(100);
@@ -78,12 +82,15 @@ task main() {
 		stopDrive();
 		wait1Msec(900);
 		Task_Spawn(a_dropClamp);
-		wait1Msec(900);
+		wait1Msec(900);*/
 		raiseLift();
-		wait1Msec(2500);
+		wait1Msec(2800);
 		stopLift();
 		wait1Msec(900);
-		Task_Spawn(a_dropOneBall);
+		Task_Spawn(a_dropBall);
+		lowerLift();
+		wait1Msec(3400);
+		stopLift();
 		//turnR();
 		//wait1Msec(500);
 		break;

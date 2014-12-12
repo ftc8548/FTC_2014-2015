@@ -31,7 +31,7 @@ const int startPosClampR = 110;
 const int startPosClampL = 110;
 const int endPosClampR = 240;
 const int endPosClampL = 10;
-const int startPosDrop = 250;
+const int startPosDrop = 10;
 const int endPosDrop = 180;
 const float d_wheelDiam = 14.6; // in cm
 const float l_wheelDiam = 10.0; // in cm
@@ -111,6 +111,8 @@ task a_lowerLift();
 task a_dropOneBall();
 // drops 5 balls
 task a_dropFiveBall();
+// drops balls
+task a_dropBall();
 
 ///////////////////////////// Function Definitions ///////////////////////////
 
@@ -469,4 +471,9 @@ task a_dropFiveBall() {
 	wait1Msec(timeFiveBall);
 	servo[dropServo] = startPosDrop;
 	wait1Msec(1);
+}
+
+// drops balls
+task a_dropBall() {
+	servo[dropServo] = endPosDrop;
 }
