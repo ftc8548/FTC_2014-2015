@@ -30,7 +30,7 @@ task main() {
 	Joystick_WaitForStart();
 
 	Task_Spawn(a_gyro);
-	Task_Spawn(a_wheeEncoder);
+	Task_Spawn(a_wheelEncoder);
 	Task_Spawn(a_liftEncoder);
 	while(orientation < 90) {
 		motor[rightWheel] = 100;
