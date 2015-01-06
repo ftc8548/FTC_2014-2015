@@ -2,6 +2,7 @@
 
 /////////////////////////////// Changable Variables ////////////////////
 
+const int startIRPos = 35;
 const int maxPower = 100;
 const int liftPower = 100;
 const int dropPower = -40;
@@ -11,8 +12,8 @@ const int startPosClampR = 110;
 const int startPosClampL = 110;
 const int endPosClampR = 240;
 const int endPosClampL = 10;
-const int startPosDrop = 100;
-const int endPosDrop = 230;
+const int startPosDrop = 150;
+const int endPosDrop = 130;
 const int goalPosLow = 40;
 const int goalPosMid = 70;
 const int goalPosHigh = 100;
@@ -20,7 +21,9 @@ const int goalPosCenter = 130;
 const float l_gearRatio = 1.0;
 const float l_wheelDiam = 10.0; // in c
 const float l_circumference = l_wheelDiam * PI;
+
 ////////////////////////////// Don't Change These Variables //////////////
+
 bool isLift = false;
 bool isPickup = false;
 bool isTurning = false;
@@ -29,18 +32,15 @@ float l_distanceTraveled = 0.0;
 /////////////////////////// Function Declarations //////////////////////
 
 // gets the robot ready
-void getReady();
+void servoPrep();
 // raises lift
 void raiseLift();
 // sets the lift position
 void setLift(float pos);
 
 /////////////////////////// Task Declarations ///////////////////////
+
 task t_liftEncoder();
-//task t_raiseLiftLow();
-//task t_raiseLiftMiddle();
-//task t_raiseLiftHigh();
-//task t_raiseLiftCenter();
 task t_lowerLift();
 task t_raiseLift();
 task t_stopLift();
@@ -59,11 +59,9 @@ task t_setLiftCenter();
 ////////////////////////// Function Definitions /////////////////////
 
 // gets the robot ready
-void getReady() {
-	Task_Spawn(t_liftEncoder);				// starts the lift encoder
+void servoPrep() {
+	servo[irServo] = startIRPos; // resets ir servo
 	servo[dropServo] = startPosDrop;		// resets drop servo
-	motor[firstPickupMotor] = stopPower;	// stops the pickup
-	isPickup = false; 			// stops the pickup
 }
 
 // sets lift position
