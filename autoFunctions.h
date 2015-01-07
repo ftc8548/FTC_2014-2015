@@ -17,6 +17,8 @@
 #pragma config(Servo,  srvo_S1_C2_6,    irServo,              tServoStandard)
 */
 
+// ask what Motor_getEncoder returns 
+
 #include "includes.h"
 
 ///////////////////////// Changable Variables //////////////////////////
@@ -36,16 +38,18 @@ const int turnPower = 80;
 const int drivePower = 80;
 const int liftPower = 100;
 // PID wheel variables
+const int pulseValue = 280;
 const float d_wheelDiam = 14.6; // in cm
 const float l_wheelDiam = 10.0; // in cm
 const float d_circumference = d_wheelDiam * PI;
 const float l_circumference = l_wheelDiam * PI;
 const float d_gearRatio = 2.0;
 const float l_gearRatio = 1.0;
-
+// lift variables 
 const int goalPosGround = 0;
 const int goalPosHigh = 80;
 const int goalPosCenter = 120;
+
 /////////////////////// Don't change these variables ///////////////////
 
 float orientation = 0.0;
@@ -192,9 +196,9 @@ void setLift(float pos) {
 	float accumError = 0.0;
 
     if(pos > l_distanceTraveled) {
-        target = l_distanceTraveled + (pos / l_circumference /l_gearRatio) * 360;
+        target = l_distanceTraveled + (pos / l_circumference /l_gearRatio) * pulseValue;
     } else if (pos < l_distanceTraveled) {
-        target = l_distanceTraveled - (pos / l_circumference /l_gearRatio) * 360;
+        target = l_distanceTraveled - (pos / l_circumference /l_gearRatio) * pulseValue;
     } else {
         target = l_distanceTraveled;
     }
@@ -237,7 +241,7 @@ void turnRight(float degrees) {
 
 // drives the robot forward
 void driveForward(float distance) {
-    float target = d_distanceTraveled + (distance / d_circumference / d_gearRatio) * 360;
+    float target = d_distanceTraveled + (distance / d_circumference / d_gearRatio) * pulseValue;
     bool isMoving = true;
     int power = 0.0;
     int timer = 0.0;

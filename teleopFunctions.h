@@ -18,8 +18,9 @@ const int goalPosLow = 40;
 const int goalPosMid = 70;
 const int goalPosHigh = 100;
 const int goalPosCenter = 130;
+const int pulseValue = 280;
 const float l_gearRatio = 1.0;
-const float l_wheelDiam = 10.0; // in c
+const float l_wheelDiam = 10.0; // in cm
 const float l_circumference = l_wheelDiam * PI;
 
 ////////////////////////////// Don't Change These Variables //////////////
@@ -80,14 +81,12 @@ void setLift(float pos) {
 	float prevError = 0.0;
 	float errorRate = 0.0;
 	float i_error = 0.0;
-	//float i_error[errorCount] = {0.0,0.0,0.0,0.0,0.0};
 	float i_errorValue = 0.0;
-	//float errorArrayValue = 0.0;
 
     if(pos > l_distanceTraveled) {
-        target = l_distanceTraveled + (pos / l_circumference /l_gearRatio) * 360;
+        target = l_distanceTraveled + (pos / l_circumference /l_gearRatio) * pulseValue;
     } else if (pos < l_distanceTraveled) {
-        target = l_distanceTraveled - (pos / l_circumference /l_gearRatio) * 360;
+        target = l_distanceTraveled - (pos / l_circumference /l_gearRatio) * pulseValue;
     } else {
         target = l_distanceTraveled;
     }
@@ -98,17 +97,10 @@ void setLift(float pos) {
         prevError = currError;
         currError = target - l_distanceTraveled;
         errorRate = prevError - currError;
-        //errorArrayValue = errorRate * currDt;
 
         i_error = errorRate * currDt;
         i_errorValue += i_error;
-        /*for(int i = 0; i < errorCount - 2; i++) {
-         i_error[i] = i_error[i+1];
-         }
-         i_error[4] = errorArrayValue;
-         for(int i = 0; i < errorCount - 1; i++) {
-         i_errorValue += i_error[i];
-         }*/
+        
         PIDValue = kP * currError + kI * i_errorValue;
 
 		if(PIDValue > 500) {
@@ -133,9 +125,10 @@ void setLift(float pos) {
 	motor[liftMotor] = 0;
 
 }
+
 // raises the lift
 void raiseLift(float distance) {
-	float target = l_distanceTraveled + (distance / l_circumference / l_gearRatio) * 360;
+	float target = l_distanceTraveled + (distance / l_circumference / l_gearRatio) * pulseValue;
     bool isLifting = true;
     int power = 0.0;
     int timer = 0.0;
@@ -149,9 +142,7 @@ void raiseLift(float distance) {
 	float prevError = 0.0;
 	float errorRate = 0.0;
 	float i_error = 0.0;
-	//float i_error[errorCount] = {0.0,0.0,0.0,0.0,0.0};
 	float i_errorValue = 0.0;
-	//float errorArrayValue = 0.0;
 	Time_ClearTimer(timer);
 
     while(isLifting) {
@@ -160,17 +151,9 @@ void raiseLift(float distance) {
         prevError = currError;
         currError = target - l_distanceTraveled;
         errorRate = prevError - currError;
-        //errorArrayValue = errorRate * currDt;
 
         i_error = errorRate * currDt;
         i_errorValue += i_error;
-        /*for(int i = 0; i < errorCount - 2; i++) {
-         i_error[i] = i_error[i+1];
-         }
-         i_error[4] = errorArrayValue;
-         for(int i = 0; i < errorCount - 1; i++) {
-         i_errorValue += i_error[i];
-         }*/
         PIDValue = kP * currError + kI * i_errorValue;
 
 		if(PIDValue > 500) {
@@ -211,6 +194,7 @@ task t_liftEncoder() {
 		wait1Msec(1);
 	}
 }
+
 // lowers the lift to the bottom goal
 /*task t_raiseLiftLow() {
     raiseLift(goalPosLow);
