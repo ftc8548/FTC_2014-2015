@@ -2,22 +2,26 @@
 
 /////////////////////////////// Changable Variables ////////////////////
 
+// servos
 const int startIRPos = 35;
+const int startPosClampR = 110;
+const int startPosClampL = 110;
+const int endPosClampR = 240;
+const int endPosClampL = 10;
+const int startPosDrop = 40;
+const int endPosDrop = 15;
+// powers
 const int maxPower = 100;
 const int liftPower = 100;
 const int dropPower = -40;
 const int pickupPower = 80;
 const int stopPower = 0;
-const int startPosClampR = 110;
-const int startPosClampL = 110;
-const int endPosClampR = 240;
-const int endPosClampL = 10;
-const int startPosDrop = 150;
-const int endPosDrop = 130;
+// goal positions
 const int goalPosLow = 40;
 const int goalPosMid = 70;
 const int goalPosHigh = 100;
 const int goalPosCenter = 130;
+// PID
 const int pulseValue = 280;
 const float l_gearRatio = 1.0;
 const float l_wheelDiam = 10.0; // in cm
@@ -100,7 +104,7 @@ void setLift(float pos) {
 
         i_error = errorRate * currDt;
         i_errorValue += i_error;
-        
+
         PIDValue = kP * currError + kI * i_errorValue;
 
 		if(PIDValue > 500) {
@@ -182,15 +186,8 @@ void raiseLift(float distance) {
 
 // tells position of the lift
 task t_liftEncoder() {
-	float l_vel_curr = 0.0;
-	float l_dt = 0.0;
-	int timer_lift;
-	Time_ClearTimer(timer_lift);
 	while(true) {
-		l_dt = (float)Time_GetTime(timer_lift) / 1000.0;
-		Time_ClearTimer(timer_lift);
-		l_vel_curr = (float)(Motor_GetEncoder(liftMotor));
-		l_distanceTraveled += l_vel_curr * l_dt;
+		l_distanceTraveled = (float) (Motor_GetEncoder(liftMotor));
 		wait1Msec(1);
 	}
 }

@@ -17,7 +17,7 @@
 #pragma config(Servo,  srvo_S1_C2_6,    irServo,              tServoStandard)
 */
 
-// ask what Motor_getEncoder returns 
+// ask what Motor_getEncoder returns
 
 #include "includes.h"
 
@@ -30,7 +30,7 @@ const int startPosClampR = 110;
 const int startPosClampL = 110;
 const int endPosClampR = 240;
 const int endPosClampL = 10;
-const int startPosDrop = 100;
+const int startPosDrop = 30;
 const int endPosDrop = 230;
 // driving powers
 const int pickupPower = 50;
@@ -45,7 +45,7 @@ const float d_circumference = d_wheelDiam * PI;
 const float l_circumference = l_wheelDiam * PI;
 const float d_gearRatio = 2.0;
 const float l_gearRatio = 1.0;
-// lift variables 
+// lift variables
 const int goalPosGround = 0;
 const int goalPosHigh = 80;
 const int goalPosCenter = 120;
@@ -307,17 +307,22 @@ void checkIR() {
 
 // starts the gyro
 task a_gyro() {
-	nxtDisplayTextLine(0, "Task");
+	//nxtDisplayTextLine(0, "%d", orientation);
 	int timer_gyro = 0;
 	float g_vel_curr = 0.0;
 	float g_vel_prev = 0.0;
 	float g_dt = 0.0;
+	nxtDisplayTextLine(0, "%d", orientation);
 	HTGYROstartCal(gyroSensor);
+	orientation = 0.0;
+	//nxtDisplayTextLine(0, "%d", orientation);
 	Time_ClearTimer(timer_gyro);
 	while (true) {
 		g_vel_prev = g_vel_curr;
-		g_dt = (float)Time_GetTime(timer_gyro) / 1000;
+		g_dt = (float)Time_GetTime(timer_gyro);
+		//g_dt = (float)time1[timer_gyro];
 		Time_ClearTimer(timer_gyro);
+		//nxtDisplayTextLine(3, "%d", orientation);
 		g_vel_curr = (float)HTGYROreadRot(gyroSensor);
 		//orientation += (g_vel_prev + g_vel_curr) * 0.5 * g_dt;
 		orientation += g_vel_curr * g_dt;
@@ -328,30 +333,16 @@ task a_gyro() {
 
 // Distance Travelled by robot
 task a_wheelEncoder() {
-	int timer_distance = 0;
-	float d_vel_curr = 0.0;
-	float d_dt = 0.0;
-	Time_ClearTimer(timer_distance);
   while(true) {
-  	d_dt = (float)Time_GetTime(timer_distance) / 1000.0;
-    Time_ClearTimer(timer_distance);
-    d_vel_curr = (float)(Motor_GetEncoder(leftWheel) + Motor_GetEncoder(rightWheel)) / 2;
-    d_distanceTraveled += d_vel_curr * d_dt;
+    d_distanceTraveled = (float) (Motor_GetEncoder(leftWheel) + Motor_GetEncoder(rightWheel)) / 2;
     wait1Msec(1);
   }
 }
 
 // tells position of the lift
 task a_liftEncoder() {
-	int timer_lift = 0;
-	float l_vel_curr = 0.0;
-	float l_dt = 0.0;
-	Time_ClearTimer(timer_lift);
 	while(true) {
-		l_dt = (float)Time_GetTime(timer_lift) / 1000.0;
-		Time_ClearTimer(timer_lift);
-		l_vel_curr = (float)(Motor_GetEncoder(liftMotor));
-		l_distanceTraveled += l_vel_curr * l_dt;
+		l_distanceTraveled = (float) (Motor_GetEncoder(liftMotor));
 		wait1Msec(1);
 	}
 }
