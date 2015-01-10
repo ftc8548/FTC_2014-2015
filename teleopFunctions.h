@@ -8,14 +8,15 @@ const int startPosClampR = 110;
 const int startPosClampL = 110;
 const int endPosClampR = 240;
 const int endPosClampL = 10;
-const int startPosDrop = 40;
-const int endPosDrop = 15;
+const int startPosDrop = 70;
+const int endPosDrop = 30;
 // powers
 const int maxPower = 100;
 const int liftPower = 100;
 const int dropPower = -40;
-const int pickupPower = 80;
+const int pickupPower = 65;
 const int stopPower = 0;
+bool isFullPower = true;
 // goal positions
 const int goalPosLow = 40;
 const int goalPosMid = 70;
@@ -29,6 +30,8 @@ const float l_circumference = l_wheelDiam * PI;
 
 ////////////////////////////// Don't Change These Variables //////////////
 
+int drivePowerR = 0;
+int drivePowerL = 0;
 bool isLift = false;
 bool isPickup = false;
 bool isTurning = false;

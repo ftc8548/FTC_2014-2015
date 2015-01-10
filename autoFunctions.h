@@ -1,14 +1,14 @@
 /*
 #pragma config(Hubs,  S1, HTMotor,  HTServo,  HTMotor,  none)
-#pragma config(Sensor, S2,     gyroSensor,     sensorI2CHiTechnicGyro)
+#pragma config(Sensor, S2,     gyroSensor,     sensorI2CCustom)
 #pragma config(Sensor, S3,     irSensor,       sensorHiTechnicIRSeeker600)
-#pragma config(Motor,  motorA,           ,             				tmotorNXT, openLoop)
-#pragma config(Motor,  motorB,           ,             				tmotorNXT, openLoop)
-#pragma config(Motor,  motorC,           ,             				tmotorNXT, openLoop)
-#pragma config(Motor,  mtr_S1_C1_1,     leftWheel,     				tmotorTetrix, openLoop, encoder)
-#pragma config(Motor,  mtr_S1_C1_2,     firstPickupMotor, 		tmotorTetrix, openLoop, reversed)
-#pragma config(Motor,  mtr_S1_C3_1,     rightWheel,    				tmotorTetrix, openLoop, reversed)
-#pragma config(Motor,  mtr_S1_C3_2,     liftMotor,     				tmotorTetrix, openLoop)
+#pragma config(Motor,  motorA,           ,             tmotorNXT, openLoop)
+#pragma config(Motor,  motorB,           ,             tmotorNXT, openLoop)
+#pragma config(Motor,  motorC,           ,             tmotorNXT, openLoop)
+#pragma config(Motor,  mtr_S1_C1_1,     leftWheel,     tmotorTetrix, openLoop, reversed, encoder)
+#pragma config(Motor,  mtr_S1_C1_2,     firstPickupMotor, tmotorTetrix, openLoop, reversed)
+#pragma config(Motor,  mtr_S1_C3_1,     rightWheel,    tmotorTetrix, openLoop, encoder)
+#pragma config(Motor,  mtr_S1_C3_2,     liftMotor,     tmotorTetrix, openLoop, encoder)
 #pragma config(Servo,  srvo_S1_C2_1,    servo1,               tServoNone)
 #pragma config(Servo,  srvo_S1_C2_2,    servo2,               tServoNone)
 #pragma config(Servo,  srvo_S1_C2_3,    dropServo,            tServoStandard)
@@ -30,16 +30,17 @@ const int startPosClampR = 110;
 const int startPosClampL = 110;
 const int endPosClampR = 240;
 const int endPosClampL = 10;
-const int startPosDrop = 30;
-const int endPosDrop = 230;
+const int startPosDrop = 70;
+const int endPosDrop = 30;
 // driving powers
 const int pickupPower = 50;
-const int turnPower = 80;
-const int drivePower = 80;
+const int turnPower = 40;
+const int drivePower = 40;
+const int rampPower = 25;
 const int liftPower = 100;
 // PID wheel variables
 const int pulseValue = 280;
-const float d_wheelDiam = 14.6; // in cm
+const float d_wheelDiam = 6.985; // in cm
 const float l_wheelDiam = 10.0; // in cm
 const float d_circumference = d_wheelDiam * PI;
 const float l_circumference = l_wheelDiam * PI;
@@ -56,21 +57,29 @@ float orientation = 0.0;
 float d_distanceTraveled = 0.0;
 float l_distanceTraveled = 0.0;
 bool irDetected = false;
+float g_vel_prev = 0.0;
+float g_vel_curr = 0.0;
 
 ///////////////////////////// Function Declarations //////////////////////
 
-// gets the robot ready
+// gets the servos ready
 void servoPrep();
+// gets the encoders ready
+void encoderPrep();
 // starts the tracker tasks
 void startTrackers();
-// turns the robot left
-void turnLeft(float degrees);
-// turns the robot right
-void turnRight(float degrees);
+// drops clamp servos
+void dropClamp();
+// drives the robot down the ramp
+void ramp(float distance);
 // moves the robot forward
 void driveForward(float distance);
 // moves the robot backward
 void driveBackward(float distance);
+// turns the robot right
+void turnRight(float degrees);
+// turns the robot left
+void turnLeft(float degrees);
 // checks the ir sensor for the beacon
 void checkIR();
 // raises the lift to the goal
@@ -115,12 +124,144 @@ task a_setLiftCenter();
 
 ///////////////////////////// Function Definitions ///////////////////////////
 
-// gets the robot ready
+// gets the servos ready
 void servoPrep() {
 	servo[clampServoL] = startPosClampL;
 	servo[clampServoR] = startPosClampR;
 	servo[dropServo] = startPosDrop;
 	Task_Spawn(a_lowerIR);
+}
+
+// gets the encoders ready
+void encoderPrep() {
+	nMotorEncoder(leftWheel) = 0;
+	nMotorEncoder(rightWheel) = 0;
+	nMotorEncoder(liftMotor) = 0;
+}
+
+// drops clamp servos
+void dropClamp() {
+	servo[clampServoL] = endPosClampL;
+	servo[clampServoR] = endPosClampR;
+}
+
+// drives the robot down ramp
+void ramp(float distance) {
+    float target = d_distanceTraveled - (distance / d_circumference / d_gearRatio) * pulseValue;
+    bool isMoving = true;
+    int power = 0.0;
+    int timer = 0.0;
+    float d_power;
+    float kP = 3.0;
+    float kI = 0.0001;
+    float currDt = 0.0;
+    float PIDValue = 0.0;
+    float currError = 0.0;
+    float prevError = 0.0;
+    float errorRate = 0.0;
+    float accumError = 0.0;
+    Time_ClearTimer(timer);
+
+    while(isMoving) {
+    	currDt = Time_GetTime(timer) / 1000;
+    	Time_ClearTimer(timer);
+    	prevError = currError;
+      currError = target - d_distanceTraveled;
+      errorRate = currError - prevError;
+    	accumError += errorRate * currDt;
+    	PIDValue = kP * currError + kI * accumError;
+
+if(PIDValue > 200) {
+      	d_power = rampPower;
+      }
+      else if(PIDValue < -200) {
+      	d_power = -rampPower;
+      }
+      else if(PIDValue < 200 && PIDValue > 80) {
+      	d_power = (int)((float)PIDValue / 8.3);
+      }
+      else if(PIDValue > -200 && PIDValue < -80) {
+      	d_power = -(int)((float)PIDValue / 8.3);
+      }
+      else if(PIDValue > 80) {
+        d_power = 10;
+      }
+      else if(PIDValue < -80) {
+        d_power = -10;
+      }
+      motor[leftWheel] = d_power;
+      motor[rightWheel] = d_power;
+      if(abs(PIDValue) < 50) {
+          motor[leftWheel] = 0;
+          motor[rightWheel] = 0;
+          isMoving = false;
+      }
+      wait1Msec(1);
+      nxtDisplayTextLine(5, "%d", PIDValue);
+      nxtDisplayTextLine(6, "%d", currError);
+    }
+}
+
+
+
+// drives the robot forward
+void driveForward(float distance) {
+    float target = d_distanceTraveled + (distance / d_circumference / d_gearRatio) * pulseValue;
+    bool isMoving = true;
+    int power = 0.0;
+    int timer = 0.0;
+    float d_power;
+    float kP = 3.0;
+    float kI = 0.0001;
+    float currDt = 0.0;
+    float PIDValue = 0.0;
+    float currError = 0.0;
+    float prevError = 0.0;
+    float errorRate = 0.0;
+    float accumError = 0.0;
+    Time_ClearTimer(timer);
+
+    while(isMoving) {
+    	currDt = Time_GetTime(timer) / 1000;
+    	Time_ClearTimer(timer);
+    	prevError = currError;
+      currError = target - d_distanceTraveled;
+      errorRate = currError - prevError;
+    	accumError += errorRate * currDt;
+    	PIDValue = kP * currError + kI * accumError;
+
+      if(PIDValue > 340) {
+      	d_power = drivePower;
+      }
+      else if(PIDValue < -340) {
+      	d_power = -drivePower;
+      }
+      else if(PIDValue < 340 && PIDValue > 150) {
+      	d_power = (int)((float)PIDValue / 8.3);
+      }
+      else if(PIDValue > -340 && PIDValue < -150) {
+      	d_power = (int)((float)PIDValue / 8.3);
+      }
+      else if(PIDValue > 150) {
+        d_power = 20;
+      }
+      else if(PIDValue < -150) {
+        d_power = -20;
+      }
+      motor[leftWheel] = d_power;
+      motor[rightWheel] = d_power;
+      if(abs(PIDValue) < 50) {
+          motor[leftWheel] = 0;
+          motor[rightWheel] = 0;
+          isMoving = false;
+      }
+      wait1Msec(1);
+    }
+}
+
+// moves the robot forward
+void driveBackward(float distance) {
+	driveForward(-distance);
 }
 // starts the tracker tasks
 void startTrackers() {
@@ -128,15 +269,15 @@ void startTrackers() {
 	Task_Spawn(a_liftEncoder);
 	Task_Spawn(a_wheelEncoder);
 }
-// turns the robot to the left
-void turnLeft(float degrees) {
+// turns the robot to the right
+void turnRight(float degrees) {
 	bool isTurning = true;
 	int timer = 0.0;
 	int power = 0.0;
 	float target = orientation + degrees;
-	float t_power, t_power_neg;
-	float kP = 0.3;
-	float kI = 10.0;
+	float t_power;
+	float kP = 0.03;
+	float kI = 0.0;
 	float totalDt = 0.0;
 	float currDt = 0.0;
 	float PIDValue = 0.0;
@@ -174,8 +315,14 @@ void turnLeft(float degrees) {
 		motor[rightWheel] = t_power;
 		wait1Msec(1);
 	}
+	g_vel_prev = g_vel_curr;
 	motor[leftWheel] = 0;
 	motor[rightWheel] = 0;
+}
+
+// turns the robot to the left
+void turnLeft(float degrees) {
+	turnRight(-degrees);
 }
 
 // sets lift position
@@ -234,66 +381,6 @@ void setLift(float pos) {
 	motor[liftMotor] = 0;
 }
 
-// turns the robot to the right
-void turnRight(float degrees) {
-	turnLeft(-degrees);
-}
-
-// drives the robot forward
-void driveForward(float distance) {
-    float target = d_distanceTraveled + (distance / d_circumference / d_gearRatio) * pulseValue;
-    bool isMoving = true;
-    int power = 0.0;
-    int timer = 0.0;
-    float d_power;
-    float kP = 0.3;
-    float kI = 10.0;
-    float totalDt = 0.0;
-    float currDt = 0.0;
-    float PIDValue = 0.0;
-    float currError = 0.0;
-    float prevError = 0.0;
-    float errorRate = 0.0;
-    float accumError = 0.0;
-    Time_ClearTimer(timer);
-
-    while(isMoving) {
-    	currDt = Time_GetTime(timer) / 1000 - totalDt;
-    	totalDt += currDt;
-    	prevError = currError;
-      currError = target - d_distanceTraveled;
-      errorRate = prevError - currError;
-    	accumError += errorRate * currDt;
-    	PIDValue = kP * currError + kI * accumError;
-
-      if(PIDValue > 500) {
-      	d_power = drivePower;
-      }
-      else if(PIDValue < -500) {
-      	d_power = -drivePower;
-      }
-      else if(PIDValue > 150) {
-        d_power = 30;
-      }
-      else if(PIDValue < -150) {
-        d_power = -30;
-      }
-      motor[leftWheel] = d_power;
-      motor[rightWheel] = d_power;
-      if(abs(PIDValue) < 50) {
-          motor[leftWheel] = 0;
-          motor[rightWheel] = 0;
-          isMoving = false;
-      }
-      wait1Msec(1);
-    }
-}
-
-// moves the robot forward
-void driveBackward(float distance) {
-	driveForward(-distance);
-}
-
 // checks the ir sensor for the beacon
 void checkIR() {
 	if(SensorValue[irSensor] == 0)
@@ -307,34 +394,33 @@ void checkIR() {
 
 // starts the gyro
 task a_gyro() {
-	//nxtDisplayTextLine(0, "%d", orientation);
 	int timer_gyro = 0;
-	float g_vel_curr = 0.0;
-	float g_vel_prev = 0.0;
+	g_vel_curr = 0.0;
 	float g_dt = 0.0;
-	nxtDisplayTextLine(0, "%d", orientation);
 	HTGYROstartCal(gyroSensor);
-	orientation = 0.0;
-	//nxtDisplayTextLine(0, "%d", orientation);
 	Time_ClearTimer(timer_gyro);
 	while (true) {
-		g_vel_prev = g_vel_curr;
-		g_dt = (float)Time_GetTime(timer_gyro);
-		//g_dt = (float)time1[timer_gyro];
+		g_dt = (float)Time_GetTime(timer_gyro) / 1000.0;
 		Time_ClearTimer(timer_gyro);
-		//nxtDisplayTextLine(3, "%d", orientation);
 		g_vel_curr = (float)HTGYROreadRot(gyroSensor);
-		//orientation += (g_vel_prev + g_vel_curr) * 0.5 * g_dt;
 		orientation += g_vel_curr * g_dt;
-		nxtDisplayTextLine(3, "%d", orientation);
+		nxtDisplayTextLine(0, "%d", orientation);
+		nxtDisplayTextLine(1, "%d", g_vel_curr);
 		wait1Msec(1);
 	}
 }
 
 // Distance Travelled by robot
 task a_wheelEncoder() {
+	d_distanceTraveled = 0.0;
+	float tickRight, tickLeft;
   while(true) {
-    d_distanceTraveled = (float) (Motor_GetEncoder(leftWheel) + Motor_GetEncoder(rightWheel)) / 2;
+    d_distanceTraveled = (float) (Motor_GetEncoder(leftWheel) + Motor_GetEncoder(rightWheel)) / 2.0;
+    tickLeft = Motor_GetEncoder(leftWheel);
+    tickRight = Motor_GetEncoder(rightWheel);
+    /*nxtDisplayTextLine(2, "%d", d_distanceTraveled);
+    nxtDisplayTextLine(3, "%d", tickLeft);
+    nxtDisplayTextLine(4, "%d", tickRight);*/
     wait1Msec(1);
   }
 }
