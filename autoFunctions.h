@@ -171,7 +171,7 @@ void ramp(float distance) {
     	accumError += errorRate * currDt;
     	PIDValue = kP * currError + kI * accumError;
 
-if(PIDValue > 200) {
+	if(PIDValue > 200) {
       	d_power = rampPower;
       }
       else if(PIDValue < -200) {
@@ -191,7 +191,7 @@ if(PIDValue > 200) {
       }
       motor[leftWheel] = d_power;
       motor[rightWheel] = d_power;
-      if(abs(PIDValue) < 50) {
+      if(abs(currError) < 50) {
           motor[leftWheel] = 0;
           motor[rightWheel] = 0;
           isMoving = false;
@@ -278,7 +278,6 @@ void turnRight(float degrees) {
 	float t_power;
 	float kP = 0.03;
 	float kI = 0.0;
-	float totalDt = 0.0;
 	float currDt = 0.0;
 	float PIDValue = 0.0;
 	float currError = 0.0;
@@ -288,8 +287,8 @@ void turnRight(float degrees) {
 
 	Time_ClearTimer(timer);
 	while(isTurning) {
-		currDt = Time_GetTime(timer) / 1000 - totalDt;
-		totalDt += currDt;
+		currDt = Time_GetTime(timer) / 1000;
+		Time_ClearTimer(timer);
 		prevError = currError;
 		currError = target - orientation;
 		errorRate = prevError - currError;
@@ -297,7 +296,7 @@ void turnRight(float degrees) {
 		PIDValue = kP * currError + kI * accumError;
 
 		if(abs(PIDValue) < 2.5) {
-				isTurning = false;
+			isTurning = false;
 		}
 		if(PIDValue > 50)
 			t_power = turnPower;
@@ -313,6 +312,7 @@ void turnRight(float degrees) {
 		}
 		motor[leftWheel] = -t_power;
 		motor[rightWheel] = t_power;
+		nxtDisplayTextLine(3, "pwr: %d", t_power);
 		wait1Msec(1);
 	}
 	g_vel_prev = g_vel_curr;
@@ -334,7 +334,6 @@ void setLift(float pos) {
 	float l_power;
 	float kP = 0.3;
 	float kI = 10.0;
-	float totalDt = 0.0;
 	float currDt = 0.0;
 	float PIDValue = 0.0;
 	float currError = 0.0;
@@ -351,8 +350,8 @@ void setLift(float pos) {
     }
     Time_ClearTimer(timer);
     while(isLifting) {
-        currDt = Time_GetTime(timer) / 1000 - totalDt;
-        totalDt += currDt;
+        currDt = Time_GetTime(timer) / 1000;
+        Time_ClearTimer(timer);
         prevError = currError;
         currError = target - l_distanceTraveled;
         errorRate = prevError - currError;
@@ -398,14 +397,16 @@ task a_gyro() {
 	g_vel_curr = 0.0;
 	float g_dt = 0.0;
 	HTGYROstartCal(gyroSensor);
+	//Joystick_WaitForStart();
 	Time_ClearTimer(timer_gyro);
 	while (true) {
 		g_dt = (float)Time_GetTime(timer_gyro) / 1000.0;
 		Time_ClearTimer(timer_gyro);
 		g_vel_curr = (float)HTGYROreadRot(gyroSensor);
 		orientation += g_vel_curr * g_dt;
-		nxtDisplayTextLine(0, "%d", orientation);
-		nxtDisplayTextLine(1, "%d", g_vel_curr);
+		nxtDisplayTextLine(0, "ang: %d", orientation);
+		nxtDisplayTextLine(1, "vel: %d", g_vel_curr);
+		nxtDisplayTextLine(2, "cal: %d", HTGYROreadCal(gyroSensor));
 		wait1Msec(1);
 	}
 }

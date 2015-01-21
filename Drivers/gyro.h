@@ -95,21 +95,21 @@ float HTGYROreadRot(tMUXSensor muxsensor) {
 // `muxsensor`:	SMUX sensor port number.
 float HTGYROstartCal(tMUXSensor muxsensor) {
 	long _avgdata = 0;
-	hogCPU();
+	//hogCPU();
 	wait1Msec(100); // Give the gyro time to initialize.
 	int temp_reading = HTSMUXreadAnalogue(muxsensor); // Flush out bad readings.
 
 	// Take 50 readings and average them out.
 	// NOTE: When changing limits on `i`, make sure to change
 	// the number `_avgdata` is averaged by as well!
-	for (int i=0; i<50; i++) {
+	for (int i=0; i<20; i++) {
 		_avgdata += HTSMUXreadAnalogue(muxsensor);
 		wait1Msec(5);
 	}
-	releaseCPU();
+	//releaseCPU();
 
 	// Store new offset value.
-	HTGYRO_offsets[SPORT(muxsensor)][MPORT(muxsensor)] = (_avgdata/50.0);
+	HTGYRO_offsets[SPORT(muxsensor)][MPORT(muxsensor)] = (_avgdata/20.0);
 	// Return new offset value.
 	return HTGYRO_offsets[SPORT(muxsensor)][MPORT(muxsensor)];
 }

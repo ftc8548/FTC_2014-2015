@@ -56,41 +56,45 @@ void stopLift() {
 
 task main() {
 	servoPrep();
-	Joystick_WaitForStart();
-	//disableDiagnosticsDisplay();
+	//Joystick_WaitForStart();
+	disableDiagnosticsDisplay();
 	while(true) {
 		encoderPrep();
 		startTrackers();
-		//ramp(600.0);
-		//turnRight(130.0); gives 90
-		driveBackward(100.0);
-		wait1Msec(550);
-		turnRight(160.0);
-		wait1Msec(550);
-		driveBackward(150.0);
-		wait1Msec(550);
-		TR(675);
-		wait1Msec(800);
-		driveBackward(775.0);
-		wait1Msec(550);
-		TL(700);
-		wait1Msec(550);
-		ramp(125);
-		wait1Msec(550);
-		DB(150);
-		wait1Msec(550);
-		Task_Spawn(a_dropClamp);
-		wait1Msec(550);
-		raiseLift();
-		wait1Msec(1800);
-		stopLift();
-		wait1Msec(900);
-		Task_Spawn(a_dropBall);
-		wait1Msec(3000);
-		Task_Spawn(a_resetDrop);
+		turnRight(90.0);
+		nxtDisplayTextLine(4, "DONE");
+		////ramp(600.0);
+		////turnRight(130.0); gives 90
+		//driveBackward(100.0);
+		//wait1Msec(550);
+		//turnRight(160.0);
+		//wait1Msec(550);
+		//driveBackward(150.0);
+		//wait1Msec(550);
+		//TR(675);
+		//wait1Msec(800);
+		//driveBackward(775.0);
+		//wait1Msec(550);
+		//TL(700);
+		//wait1Msec(550);
+		//ramp(125);
+		//wait1Msec(550);
+		//DB(150);
+		//wait1Msec(550);
+		//Task_Spawn(a_dropClamp);
+		//wait1Msec(550);
+		//raiseLift();
+		//wait1Msec(1800);
+		//stopLift();
+		//wait1Msec(900);
+		//Task_Spawn(a_dropBall);
+		//wait1Msec(3000);
+		//Task_Spawn(a_resetDrop);
 		//lowerLift();
-		wait1Msec(3000);
-		stopLift();
-		break;
+		while (true) {
+			wait1Msec(3000);
+		}
+		//stopLift();
+		//break;
 	}
 }
