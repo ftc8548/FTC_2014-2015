@@ -250,7 +250,7 @@ void driveForward(float distance) {
       }
       motor[leftWheel] = d_power;
       motor[rightWheel] = d_power;
-      if(abs(PIDValue) < 50) {
+      if(abs(currError) < 50) {
           motor[leftWheel] = 0;
           motor[rightWheel] = 0;
           isMoving = false;
@@ -272,11 +272,10 @@ void startTrackers() {
 // turns the robot to the right
 void turnRight(float degrees) {
 	bool isTurning = true;
-	int timer = 0.0;
-	int power = 0.0;
+	int timer = 0;
 	float target = orientation + degrees;
 	float t_power;
-	float kP = 0.03;
+	float kP = 0.9;
 	float kI = 0.0;
 	float currDt = 0.0;
 	float PIDValue = 0.0;
@@ -295,29 +294,29 @@ void turnRight(float degrees) {
 		accumError += errorRate * currDt;
 		PIDValue = kP * currError + kI * accumError;
 
-		if(abs(PIDValue) < 2.5) {
-			isTurning = false;
-		}
 		if(PIDValue > 50)
 			t_power = turnPower;
-		else if(PIDValue < 50)
+		else if(PIDValue < -50)
 			t_power = -turnPower;
-		else
-			power = PIDValue;
-		if(abs(power) < 30) {
-			if(power > 0)
-				t_power = 20;
-			else if(power < 0)
-				t_power = -30;
+		else	{
+			t_power = PIDValue;
 		}
-		motor[leftWheel] = -t_power;
-		motor[rightWheel] = t_power;
+		if(abs(t_power) < 30) {
+			if(t_power > 0)
+				t_power = 20;
+		else if(t_power < 0)
+				t_power = -20;
+		}
+		if(abs(currError) < 0.5) {
+			isTurning = false;
+			t_power = 0;
+		}
+		motor[leftWheel] = t_power;
+		motor[rightWheel] = -t_power;
 		nxtDisplayTextLine(3, "pwr: %d", t_power);
+		nxtDisplayTextLine(5, "error: %d", currError);
 		wait1Msec(1);
 	}
-	g_vel_prev = g_vel_curr;
-	motor[leftWheel] = 0;
-	motor[rightWheel] = 0;
 }
 
 // turns the robot to the left
@@ -370,7 +369,7 @@ void setLift(float pos) {
 		else if(PIDValue < -150) {
 			l_power = -50;
 		}
-		else {
+		else if(currError < 50)	{
 			l_power = 0;
 			isLifting = false;
 		}

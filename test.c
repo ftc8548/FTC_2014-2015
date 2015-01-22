@@ -61,8 +61,13 @@ task main() {
 	while(true) {
 		encoderPrep();
 		startTrackers();
+		wait1Msec(100);
 		turnRight(90.0);
-		nxtDisplayTextLine(4, "DONE");
+		wait1Msec(100);
+		turnLeft(90.0);
+		wait1Msec(100);
+		//turnRight(180);
+		driveForward(100.0);
 		////ramp(600.0);
 		////turnRight(130.0); gives 90
 		//driveBackward(100.0);
