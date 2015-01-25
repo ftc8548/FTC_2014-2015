@@ -1,24 +1,3 @@
-/*
-#pragma config(Hubs,  S1, HTMotor,  HTServo,  HTMotor,  none)
-#pragma config(Sensor, S2,     gyroSensor,     sensorI2CCustom)
-#pragma config(Sensor, S3,     irSensor,       sensorHiTechnicIRSeeker600)
-#pragma config(Motor,  motorA,           ,             tmotorNXT, openLoop)
-#pragma config(Motor,  motorB,           ,             tmotorNXT, openLoop)
-#pragma config(Motor,  motorC,           ,             tmotorNXT, openLoop)
-#pragma config(Motor,  mtr_S1_C1_1,     leftWheel,     tmotorTetrix, openLoop, reversed, encoder)
-#pragma config(Motor,  mtr_S1_C1_2,     firstPickupMotor, tmotorTetrix, openLoop, reversed)
-#pragma config(Motor,  mtr_S1_C3_1,     rightWheel,    tmotorTetrix, openLoop, encoder)
-#pragma config(Motor,  mtr_S1_C3_2,     liftMotor,     tmotorTetrix, openLoop, encoder)
-#pragma config(Servo,  srvo_S1_C2_1,    servo1,               tServoNone)
-#pragma config(Servo,  srvo_S1_C2_2,    servo2,               tServoNone)
-#pragma config(Servo,  srvo_S1_C2_3,    dropServo,            tServoStandard)
-#pragma config(Servo,  srvo_S1_C2_4,    clampServoR,          tServoStandard)
-#pragma config(Servo,  srvo_S1_C2_5,    clampServoL,          tServoStandard)
-#pragma config(Servo,  srvo_S1_C2_6,    irServo,              tServoStandard)
-*/
-
-// ask what Motor_getEncoder returns
-
 #include "includes.h"
 
 ///////////////////////// Changable Variables //////////////////////////
@@ -39,7 +18,8 @@ const int drivePower = 40;
 const int rampPower = 25;
 const int liftPower = 100;
 // PID wheel variables
-const int pulseValue = 280;
+const int andyPulseValue = 280;
+const int regPulseValue = 360;
 const float d_wheelDiam = 6.985; // in cm
 const float l_wheelDiam = 10.0; // in cm
 const float d_circumference = d_wheelDiam * PI;
@@ -50,6 +30,8 @@ const float l_gearRatio = 1.0;
 const int goalPosGround = 0;
 const int goalPosHigh = 80;
 const int goalPosCenter = 120;
+// ir variables
+int irA, irB, irC, irD, irE;
 
 /////////////////////// Don't change these variables ///////////////////
 
@@ -68,8 +50,18 @@ void servoPrep();
 void encoderPrep();
 // starts the tracker tasks
 void startTrackers();
+// raises ir
+void a_raiseIR();
+// lowers ir
+void a_lowerIR();
+// raises clamp servos
+void a_raiseClamp();
 // drops clamp servos
-void dropClamp();
+void a_dropClamp();
+// drops balls
+void a_dropBall();
+// resets drop
+void a_resetDrop();
 // drives the robot down the ramp
 void ramp(float distance);
 // moves the robot forward
@@ -97,39 +89,16 @@ task a_gyro();
 task a_wheelEncoder();
 // tells where the lift is
 task a_liftEncoder();
-// rasises the ir sensor
-task a_raiseIR();
-// lowers the ir sensor
-task a_lowerIR();
 // checks to see if the ir detects the beacon
 task a_readIR();
-// drops the clamp for roaling goals
-task a_dropClamp();
-// starts the pickup
-task a_startPickup();
-// reverses the pickup
-task a_reversePickup();
-// stops the pickup
-task a_stopPickup();
-// drops balls
-task a_dropBall();
-// resets drop
-task a_resetDrop();
-// sets the lift to ground pos
-task a_setLiftGround();
-// sets the lift to high
-task a_setLiftHigh();
-// sets the lift to center
-task a_setLiftCenter();
 
 ///////////////////////////// Function Definitions ///////////////////////////
 
 // gets the servos ready
 void servoPrep() {
-	servo[clampServoL] = startPosClampL;
-	servo[clampServoR] = startPosClampR;
-	servo[dropServo] = startPosDrop;
-	Task_Spawn(a_lowerIR);
+	a_raiseClamp();
+	a_resetDrop();
+	a_lowerIR();
 }
 
 // gets the encoders ready
@@ -139,21 +108,60 @@ void encoderPrep() {
 	nMotorEncoder(liftMotor) = 0;
 }
 
+// starts the tracker tasks
+void startTrackers() {
+	Task_Spawn(a_gyro);
+	Task_Spawn(a_liftEncoder);
+	Task_Spawn(a_wheelEncoder);
+	wait1Msec(1000);
+}
+
+// raises the ir sensor
+void a_raiseIR() {
+	servo[irServo] = endIRPos;
+	wait1Msec(100);
+}
+
+// lowers the ir sensor
+void a_lowerIR() {
+	servo[irServo] = startIRPos;
+	wait1Msec(100);
+}
+
+// raises clamp servos
+void a_raiseClamp() {
+	servo[clampServoL] = startPosClampL;
+	servo[clampServoR] = startPosClampR;
+}
+
 // drops clamp servos
-void dropClamp() {
+void a_dropClamp() {
 	servo[clampServoL] = endPosClampL;
 	servo[clampServoR] = endPosClampR;
+	wait1Msec(100);
+}
+
+// drops balls
+void a_dropBall() {
+	servo[dropServo] = endPosDrop;
+	wait1Msec(100);
+}
+
+// reset drop
+void a_resetDrop() {
+	servo[dropServo] = startPosDrop;
+	wait1Msec(100);
 }
 
 // drives the robot down ramp
 void ramp(float distance) {
-    float target = d_distanceTraveled - (distance / d_circumference / d_gearRatio) * pulseValue;
+    float target = d_distanceTraveled - (distance / d_circumference / d_gearRatio) * andyPulseValue;
     bool isMoving = true;
     int power = 0.0;
     int timer = 0.0;
     float d_power;
     float kP = 3.0;
-    float kI = 0.0001;
+    float kI = 0.0;
     float currDt = 0.0;
     float PIDValue = 0.0;
     float currError = 0.0;
@@ -206,12 +214,12 @@ void ramp(float distance) {
 
 // drives the robot forward
 void driveForward(float distance) {
-    float target = d_distanceTraveled + (distance / d_circumference / d_gearRatio) * pulseValue;
+    float target = d_distanceTraveled + (distance / d_circumference / d_gearRatio) * andyPulseValue;
     bool isMoving = true;
     int power = 0.0;
     int timer = 0.0;
     float d_power;
-    float kP = 3.0;
+    float kP = 2.0;
     float kI = 0.0001;
     float currDt = 0.0;
     float PIDValue = 0.0;
@@ -219,6 +227,7 @@ void driveForward(float distance) {
     float prevError = 0.0;
     float errorRate = 0.0;
     float accumError = 0.0;
+    float tempOrientation = orientation;
     Time_ClearTimer(timer);
 
     while(isMoving) {
@@ -257,18 +266,24 @@ void driveForward(float distance) {
       }
       wait1Msec(1);
     }
+    wait1Msec(500);
+   	if(orientation!=tempOrientation) {
+   		while(orientation - tempOrientation >= 0.05) {
+   			motor[rightWheel] = 25;
+   		}
+   		motor[rightWheel] = 0;
+   		while(tempOrientation - orientation >= 0.05) {
+   			motor[leftWheel] = 25;
+   		}
+   		motor[leftWheel] = 0;
+   	}
 }
 
 // moves the robot forward
 void driveBackward(float distance) {
 	driveForward(-distance);
 }
-// starts the tracker tasks
-void startTrackers() {
-	Task_Spawn(a_gyro);
-	Task_Spawn(a_liftEncoder);
-	Task_Spawn(a_wheelEncoder);
-}
+
 // turns the robot to the right
 void turnRight(float degrees) {
 	bool isTurning = true;
@@ -341,9 +356,9 @@ void setLift(float pos) {
 	float accumError = 0.0;
 
     if(pos > l_distanceTraveled) {
-        target = l_distanceTraveled + (pos / l_circumference /l_gearRatio) * pulseValue;
+        target = l_distanceTraveled + (pos / l_circumference /l_gearRatio) * regPulseValue;
     } else if (pos < l_distanceTraveled) {
-        target = l_distanceTraveled - (pos / l_circumference /l_gearRatio) * pulseValue;
+        target = l_distanceTraveled - (pos / l_circumference /l_gearRatio) * regPulseValue;
     } else {
         target = l_distanceTraveled;
     }
@@ -377,15 +392,6 @@ void setLift(float pos) {
     wait1Msec(1);
 	}
 	motor[liftMotor] = 0;
-}
-
-// checks the ir sensor for the beacon
-void checkIR() {
-	if(SensorValue[irSensor] == 0)
-		irDetected = true;
-	else
-		irDetected = false;
-	wait1Msec(1);
 }
 
 ////////////////////////////// Task Definitions ///////////////////////////
@@ -433,78 +439,16 @@ task a_liftEncoder() {
 	}
 }
 
-// raises the ir sensor
-task a_raiseIR() {
-	servo[irServo] = endIRPos;
-	wait1Msec(1);
-}
-
-// lowers the ir sensor
-task a_lowerIR() {
-	servo[irServo] = startIRPos;
-	wait1Msec(1);
-}
-
 // checks the ir for the beacon
 task a_readIR() {
 	while(true) {
-		checkIR();
+		HTIRS2setDSPMode(1200);
+		HTIRS2readAllACStrength(irSensor, irA, irB, irC, irD, irE);
+		// 0 to 50, 0 being no and 50 being super close
+		if(SensorValue[irSensor] == 0)
+			irDetected = true;
+		else
+			irDetected = false;
 		wait1Msec(1);
 	}
-}
-
-// drops the clamp
-task a_dropClamp() {
-	servo[clampServoR] = endPosClampR;
-	servo[clampServoL] = endPosClampL;
-	wait1Msec(1);
-}
-
-// starts the pickup
-task a_startPickup() {
-	while(true) {
-		motor[firstPickupMotor] = pickupPower;
-		//wait1Msec(3000);
-	}
-	wait1Msec(1);
-}
-
-// reverses the pickup
-task a_reversePickup() {
-	while(true) {
-		motor[firstPickupMotor] = -pickupPower;
-		//wait1Msec(3000);
-	}
-	wait1Msec(1);
-}
-
-// stops the pickup
-task a_stopPickup() {
-	motor[liftMotor] = 0;
-	wait1Msec(1);
-}
-
-// sets the lift at ground pos
-task a_setLiftGround() {
-	setLift(goalPosGround);
-}
-
-// sets the lift at high goal pos
-task a_setLiftHigh() {
-  setLift(goalPosHigh);
-}
-
-// sets the lift at center goal pos
-task a_setLiftCenter() {
-	setLift(goalPosCenter);
-}
-
-// drops balls
-task a_dropBall() {
-	servo[dropServo] = endPosDrop;
-}
-
-// reset drop
-task a_resetDrop() {
-	servo[dropServo] = startPosDrop;
 }

@@ -18,41 +18,6 @@
 #include "includes.h"
 #include "autoFunctions.h"
 
-void TR(int waitTime) {
-	motor[rightWheel] = 40;
-	motor[leftWheel] = -40;
-	wait1Msec(waitTime);
-	motor[rightWheel] = 0;
-	motor[leftWheel] = 0;
-}
-
-void TL(int waitTime) {
-	motor[rightWheel] = -40;
-	motor[leftWheel] = 40;
-	wait1Msec(waitTime);
-	motor[rightWheel] = 0;
-	motor[leftWheel] = 0;
-}
-
-void DB(int waitTime) {
-	motor[rightWheel] = -20;
-	motor[leftWheel] = -20;
-	wait1Msec(waitTime);
-	motor[rightWheel] = 0;
-	motor[leftWheel] = 0;
-}
-
-void raiseLift() {
-	motor[liftMotor] = 100;
-}
-
-void lowerLift() {
-	motor[liftMotor] = -30;
-}
-
-void stopLift() {
-	motor[liftMotor] = 0;
-}
 
 task main() {
 	servoPrep();
@@ -61,45 +26,14 @@ task main() {
 	while(true) {
 		encoderPrep();
 		startTrackers();
+		driveForward(300.0);
 		wait1Msec(100);
-		turnRight(90.0);
+		//turnRight(90.0);
 		wait1Msec(100);
-		turnLeft(90.0);
-		wait1Msec(100);
-		//turnRight(180);
-		driveForward(100.0);
-		////ramp(600.0);
-		////turnRight(130.0); gives 90
-		//driveBackward(100.0);
-		//wait1Msec(550);
-		//turnRight(160.0);
-		//wait1Msec(550);
-		//driveBackward(150.0);
-		//wait1Msec(550);
-		//TR(675);
-		//wait1Msec(800);
-		//driveBackward(775.0);
-		//wait1Msec(550);
-		//TL(700);
-		//wait1Msec(550);
-		//ramp(125);
-		//wait1Msec(550);
-		//DB(150);
-		//wait1Msec(550);
-		//Task_Spawn(a_dropClamp);
-		//wait1Msec(550);
-		//raiseLift();
-		//wait1Msec(1800);
-		//stopLift();
-		//wait1Msec(900);
-		//Task_Spawn(a_dropBall);
-		//wait1Msec(3000);
-		//Task_Spawn(a_resetDrop);
-		//lowerLift();
+
 		while (true) {
 			wait1Msec(3000);
 		}
-		//stopLift();
-		//break;
+		break;
 	}
 }
