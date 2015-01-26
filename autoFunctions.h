@@ -32,6 +32,9 @@ const int goalPosHigh = 80;
 const int goalPosCenter = 120;
 // ir variables
 short irA, irB, irC, irD, irE;
+bool irPos1 = false;
+bool irPos2 = false;
+bool irPos3 = false;
 
 /////////////////////// Don't change these variables ///////////////////
 
