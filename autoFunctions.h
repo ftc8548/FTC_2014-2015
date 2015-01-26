@@ -31,7 +31,7 @@ const int goalPosGround = 0;
 const int goalPosHigh = 80;
 const int goalPosCenter = 120;
 // ir variables
-int irA, irB, irC, irD, irE;
+short irA, irB, irC, irD, irE;
 
 /////////////////////// Don't change these variables ///////////////////
 
@@ -205,8 +205,8 @@ void ramp(float distance) {
           isMoving = false;
       }
       wait1Msec(1);
-      nxtDisplayTextLine(5, "%d", PIDValue);
-      nxtDisplayTextLine(6, "%d", currError);
+      //nxtDisplayTextLine(5, "%d", PIDValue);
+      //nxtDisplayTextLine(6, "%d", currError);
     }
 }
 
@@ -216,9 +216,11 @@ void ramp(float distance) {
 void driveForward(float distance) {
     float target = d_distanceTraveled + (distance / d_circumference / d_gearRatio) * andyPulseValue;
     bool isMoving = true;
-    int power = 0.0;
+    int power = 0;
     int timer = 0.0;
     float d_power;
+    float r_errorPower
+    float l_errorPower = 0.0;
     float kP = 2.0;
     float kI = 0.0001;
     float currDt = 0.0;
@@ -257,8 +259,21 @@ void driveForward(float distance) {
       else if(PIDValue < -150) {
         d_power = -20;
       }
-      motor[leftWheel] = d_power;
-      motor[rightWheel] = d_power;
+	if(tempOrientation > orientation) {
+		r_errorPower--;
+		l_errorPower++;
+	}
+	else if(tempOrientation < orientation) {
+		r_errorPower++;
+		l_errorPower--;
+	}
+	else if(tempOrientation == orientaion) {
+		r_errorPower = 0;
+		l_errorPower = 0;
+	}
+	else if(tempOrientation < orientation && 
+      motor[leftWheel] = d_power + l_errorPower;
+      motor[rightWheel] = d_power + r_errorPower;
       if(abs(currError) < 50) {
           motor[leftWheel] = 0;
           motor[rightWheel] = 0;
@@ -328,8 +343,8 @@ void turnRight(float degrees) {
 		}
 		motor[leftWheel] = t_power;
 		motor[rightWheel] = -t_power;
-		nxtDisplayTextLine(3, "pwr: %d", t_power);
-		nxtDisplayTextLine(5, "error: %d", currError);
+		//nxtDisplayTextLine(3, "pwr: %d", t_power);
+		//nxtDisplayTextLine(5, "error: %d", currError);
 		wait1Msec(1);
 	}
 }
@@ -424,9 +439,7 @@ task a_wheelEncoder() {
     d_distanceTraveled = (float) (Motor_GetEncoder(leftWheel) + Motor_GetEncoder(rightWheel)) / 2.0;
     tickLeft = Motor_GetEncoder(leftWheel);
     tickRight = Motor_GetEncoder(rightWheel);
-    /*nxtDisplayTextLine(2, "%d", d_distanceTraveled);
-    nxtDisplayTextLine(3, "%d", tickLeft);
-    nxtDisplayTextLine(4, "%d", tickRight);*/
+    nxtDisplayTextLine(3, "dist: %d", d_distanceTraveled);
     wait1Msec(1);
   }
 }
@@ -445,10 +458,12 @@ task a_readIR() {
 		HTIRS2setDSPMode(1200);
 		HTIRS2readAllACStrength(irSensor, irA, irB, irC, irD, irE);
 		// 0 to 50, 0 being no and 50 being super close
-		if(SensorValue[irSensor] == 0)
-			irDetected = true;
-		else
-			irDetected = false;
+		nxtDisplayTextLine(4, "irA: %d", irA);
+		nxtDisplayTextLine(5, "irB: %d", irB);
+		nxtDisplayTextLine(6, "irC: %d", irC);
+		nxtDisplayTextLine(7, "irD: %d", irD);
+		nxtDisplayTextLine(8, "irE: %d", irE);
 		wait1Msec(1);
+		
 	}
 }
