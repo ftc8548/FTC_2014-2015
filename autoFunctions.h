@@ -75,8 +75,6 @@ void driveBackward(float distance);
 void turnRight(float degrees);
 // turns the robot left
 void turnLeft(float degrees);
-// checks the ir sensor for the beacon
-void checkIR();
 // raises the lift to the goal
 void raiseLift(float distance);
 // lowers the lift
@@ -160,7 +158,6 @@ void a_resetDrop() {
 void ramp(float distance) {
     float target = d_distanceTraveled - (distance / d_circumference / d_gearRatio) * andyPulseValue;
     bool isMoving = true;
-    int power = 0.0;
     int timer = 0.0;
     float d_power;
     float kP = 3.0;
@@ -219,10 +216,9 @@ void ramp(float distance) {
 void driveForward(float distance) {
     float target = d_distanceTraveled + (distance / d_circumference / d_gearRatio) * andyPulseValue;
     bool isMoving = true;
-    int power = 0;
     int timer = 0.0;
     float d_power;
-    float r_errorPower
+    float r_errorPower = 0.0;
     float l_errorPower = 0.0;
     float kP = 2.0;
     float kI = 0.0001;
@@ -264,17 +260,16 @@ void driveForward(float distance) {
       }
 	if(tempOrientation > orientation) {
 		r_errorPower--;
-		l_errorPower++;
+		l_errorPower = 0.0;
 	}
 	else if(tempOrientation < orientation) {
-		r_errorPower++;
+		r_errorPower = 0/0;
 		l_errorPower--;
 	}
 	else if(tempOrientation == orientaion) {
-		r_errorPower = 0;
-		l_errorPower = 0;
+		r_errorPower = 0.0;
+		l_errorPower = 0.0;
 	}
-	else if(tempOrientation < orientation && 
       motor[leftWheel] = d_power + l_errorPower;
       motor[rightWheel] = d_power + r_errorPower;
       if(abs(currError) < 50) {
@@ -305,7 +300,7 @@ void driveBackward(float distance) {
 // turns the robot to the right
 void turnRight(float degrees) {
 	bool isTurning = true;
-	int timer = 0;
+	int timer = 0.0;
 	float target = orientation + degrees;
 	float t_power;
 	float kP = 0.9;
@@ -361,7 +356,6 @@ void turnLeft(float degrees) {
 void setLift(float pos) {
   float target;
   bool isLifting = true;
-  int power = 0.0;
   int timer = 0.0;
 	float l_power;
 	float kP = 0.3;

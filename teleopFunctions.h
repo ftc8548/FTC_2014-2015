@@ -23,7 +23,8 @@ const int goalPosMid = 70;
 const int goalPosHigh = 100;
 const int goalPosCenter = 130;
 // PID
-const int pulseValue = 280;
+const int andyPulseValue = 280;
+const int regPulseValue = 360;
 const float l_gearRatio = 1.0;
 const float l_wheelDiam = 10.0; // in cm
 const float l_circumference = l_wheelDiam * PI;
@@ -91,9 +92,9 @@ void setLift(float pos) {
 	float i_errorValue = 0.0;
 
     if(pos > l_distanceTraveled) {
-        target = l_distanceTraveled + (pos / l_circumference /l_gearRatio) * pulseValue;
+        target = l_distanceTraveled + (pos / l_circumference /l_gearRatio) * regPulseValue;
     } else if (pos < l_distanceTraveled) {
-        target = l_distanceTraveled - (pos / l_circumference /l_gearRatio) * pulseValue;
+        target = l_distanceTraveled - (pos / l_circumference /l_gearRatio) * regPulseValue;
     } else {
         target = l_distanceTraveled;
     }
@@ -135,7 +136,7 @@ void setLift(float pos) {
 
 // raises the lift
 void raiseLift(float distance) {
-	float target = l_distanceTraveled + (distance / l_circumference / l_gearRatio) * pulseValue;
+	float target = l_distanceTraveled + (distance / l_circumference / l_gearRatio) * regPulseValue;
     bool isLifting = true;
     int power = 0.0;
     int timer = 0.0;
