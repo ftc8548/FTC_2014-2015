@@ -216,7 +216,9 @@ void ramp(float distance) {
 void driveForward(float distance) {
     float target = d_distanceTraveled + (distance / d_circumference / d_gearRatio) * andyPulseValue;
     bool isMoving = true;
+    bool isFineTune = false;
     int timer = 0.0;
+    int fineTuneTimer = 0.0;
     float d_power;
     float r_errorPower = 0.0;
     float l_errorPower = 0.0;
@@ -228,7 +230,7 @@ void driveForward(float distance) {
     float prevError = 0.0;
     float errorRate = 0.0;
     float accumError = 0.0;
-    float tempOrientation = orientation;
+    float startOrientation = orientation;
     Time_ClearTimer(timer);
 
     while(isMoving) {
@@ -240,36 +242,25 @@ void driveForward(float distance) {
     	accumError += errorRate * currDt;
     	PIDValue = kP * currError + kI * accumError;
 
-      if(PIDValue > 340) {
+      if(PIDValue > 100) {
       	d_power = drivePower;
       }
-      else if(PIDValue < -340) {
+      else if(PIDValue < -100) {
       	d_power = -drivePower;
       }
-      else if(PIDValue < 340 && PIDValue > 150) {
-      	d_power = (int)((float)PIDValue / 8.3);
+      else if(PIDValue < 100 && PIDValue > 20) {
+      	d_power = (int)((float)PIDValue);
       }
-      else if(PIDValue > -340 && PIDValue < -150) {
-      	d_power = (int)((float)PIDValue / 8.3);
+      else if(PIDValue > -100 && PIDValue < -20) {
+      	d_power = (int)((float)PIDValue);
       }
-      else if(PIDValue > 150) {
+      else if(PIDValue < 20) {
         d_power = 20;
       }
-      else if(PIDValue < -150) {
+      else if(PIDValue < -20) {
         d_power = -20;
       }
-	if(tempOrientation > orientation) {
-		r_errorPower--;
-		l_errorPower = 0.0;
-	}
-	else if(tempOrientation < orientation) {
-		r_errorPower = 0/0;
-		l_errorPower--;
-	}
-	else if(tempOrientation == orientaion) {
-		r_errorPower = 0.0;
-		l_errorPower = 0.0;
-	}
+      if(
       motor[leftWheel] = d_power + l_errorPower;
       motor[rightWheel] = d_power + r_errorPower;
       if(abs(currError) < 50) {
@@ -300,7 +291,9 @@ void driveBackward(float distance) {
 // turns the robot to the right
 void turnRight(float degrees) {
 	bool isTurning = true;
+	bool isFineTune = false;
 	int timer = 0.0;
+	int fineTuneTimer = 0.0;
 	float target = orientation + degrees;
 	float t_power;
 	float kP = 0.9;
@@ -322,21 +315,32 @@ void turnRight(float degrees) {
 		accumError += errorRate * currDt;
 		PIDValue = kP * currError + kI * accumError;
 
-		if(PIDValue > 50)
+		if(PIDValue > turnPower)
 			t_power = turnPower;
-		else if(PIDValue < -50)
+		else if(PIDValue < -turnPower)
 			t_power = -turnPower;
 		else	{
 			t_power = PIDValue;
 		}
 		if(abs(t_power) < 30) {
 			if(t_power > 0)
-				t_power = 20;
+				t_power = 30;
 		else if(t_power < 0)
-				t_power = -20;
+				t_power = -30;
 		}
 		if(abs(currError) < 0.5) {
-			isTurning = false;
+			isFineTune = true;
+		}
+		if(isFineTune) {
+			Time_ClearTimer(fineTuneTimer);
+			while(Time_GetTime(fineTuneTimer) < 3) {
+				if(target - orientation > 0)	{
+					t_power = 20;
+				}
+				if(target - orientation < 0) {
+					t_power = -20;
+				}
+			}
 			t_power = 0;
 		}
 		motor[leftWheel] = t_power;
@@ -461,6 +465,6 @@ task a_readIR() {
 		nxtDisplayTextLine(7, "irD: %d", irD);
 		nxtDisplayTextLine(8, "irE: %d", irE);
 		wait1Msec(1);
-		
+
 	}
 }
