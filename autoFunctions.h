@@ -12,12 +12,13 @@ const int endPosClampL = 10;
 const int startPosDrop = 70;
 const int endPosDrop = 30;
 // driving powers
-const int pickupPower = 50;
 const int turnPower = 40;
 const int drivePower = 40;
 const int rampPower = 25;
+const int raisePower = 100;
+const int lowerPower = 40;
 const int liftPower = 100;
-// PID wheel variables
+// PID variables
 const int andyPulseValue = 280;
 const int regPulseValue = 360;
 const float d_wheelDiam = 6.985; // in cm
@@ -26,6 +27,7 @@ const float d_circumference = d_wheelDiam * PI;
 const float l_circumference = l_wheelDiam * PI;
 const float d_gearRatio = 2.0;
 const float l_gearRatio = 1.0;
+const int fineTuneTime = 1500;
 // lift variables
 const int goalPosGround = 0;
 const int goalPosHigh = 80;
@@ -35,6 +37,8 @@ short irA, irB, irC, irD, irE;
 bool irPos1 = false;
 bool irPos2 = false;
 bool irPos3 = false;
+// general variables
+const int waitTime = 400;
 
 /////////////////////// Don't change these variables ///////////////////
 
@@ -54,17 +58,17 @@ void encoderPrep();
 // starts the tracker tasks
 void startTrackers();
 // raises ir
-void a_raiseIR();
+void raiseIR();
 // lowers ir
-void a_lowerIR();
+void lowerIR();
 // raises clamp servos
-void a_raiseClamp();
+void raiseClamp();
 // drops clamp servos
-void a_dropClamp();
+void dropClamp();
 // drops balls
-void a_dropBall();
+void dropBall();
 // resets drop
-void a_resetDrop();
+void resetDrop();
 // drives the robot down the ramp
 void ramp(float distance);
 // moves the robot forward
@@ -85,21 +89,21 @@ void setLift(float pos);
 /////////////////////////// Task Declarations ///////////////////////////////
 
 // starts the gyro
-task a_gyro();
+task gyro();
 // tells how far robot has travelled
-task a_wheelEncoder();
+task wheelEncoder();
 // tells where the lift is
-task a_liftEncoder();
+task liftEncoder();
 // checks to see if the ir detects the beacon
-task a_readIR();
+task readIR();
 
 ///////////////////////////// Function Definitions ///////////////////////////
 
 // gets the servos ready
 void servoPrep() {
-	a_raiseClamp();
-	a_resetDrop();
-	a_lowerIR();
+	raiseClamp();
+	resetDrop();
+	lowerIR();
 }
 
 // gets the encoders ready
@@ -114,173 +118,167 @@ void startTrackers() {
 	Task_Spawn(a_gyro);
 	Task_Spawn(a_liftEncoder);
 	Task_Spawn(a_wheelEncoder);
+	Task_Spawn(a_readIR);
 	wait1Msec(1000);
 }
 
 // raises the ir sensor
-void a_raiseIR() {
+void raiseIR() {
 	servo[irServo] = endIRPos;
 	wait1Msec(100);
 }
 
 // lowers the ir sensor
-void a_lowerIR() {
+void lowerIR() {
 	servo[irServo] = startIRPos;
 	wait1Msec(100);
 }
 
 // raises clamp servos
-void a_raiseClamp() {
+void raiseClamp() {
 	servo[clampServoL] = startPosClampL;
 	servo[clampServoR] = startPosClampR;
 }
 
 // drops clamp servos
-void a_dropClamp() {
+void dropClamp() {
 	servo[clampServoL] = endPosClampL;
 	servo[clampServoR] = endPosClampR;
 	wait1Msec(100);
 }
 
 // drops balls
-void a_dropBall() {
+void dropBall() {
 	servo[dropServo] = endPosDrop;
 	wait1Msec(100);
 }
 
 // reset drop
-void a_resetDrop() {
+void resetDrop() {
 	servo[dropServo] = startPosDrop;
 	wait1Msec(100);
 }
 
-// drives the robot down ramp
-void ramp(float distance) {
-    float target = d_distanceTraveled - (distance / d_circumference / d_gearRatio) * andyPulseValue;
-    bool isMoving = true;
-    int timer = 0.0;
-    float d_power;
-    float kP = 3.0;
-    float kI = 0.0;
-    float currDt = 0.0;
-    float PIDValue = 0.0;
-    float currError = 0.0;
-    float prevError = 0.0;
-    float errorRate = 0.0;
-    float accumError = 0.0;
-    Time_ClearTimer(timer);
-
-    while(isMoving) {
-    	currDt = Time_GetTime(timer) / 1000;
-    	Time_ClearTimer(timer);
-    	prevError = currError;
-      currError = target - d_distanceTraveled;
-      errorRate = currError - prevError;
-    	accumError += errorRate * currDt;
-    	PIDValue = kP * currError + kI * accumError;
-
-	if(PIDValue > 200) {
-      	d_power = rampPower;
-      }
-      else if(PIDValue < -200) {
-      	d_power = -rampPower;
-      }
-      else if(PIDValue < 200 && PIDValue > 80) {
-      	d_power = (int)((float)PIDValue / 8.3);
-      }
-      else if(PIDValue > -200 && PIDValue < -80) {
-      	d_power = -(int)((float)PIDValue / 8.3);
-      }
-      else if(PIDValue > 80) {
-        d_power = 10;
-      }
-      else if(PIDValue < -80) {
-        d_power = -10;
-      }
-      motor[leftWheel] = d_power;
-      motor[rightWheel] = d_power;
-      if(abs(currError) < 50) {
-          motor[leftWheel] = 0;
-          motor[rightWheel] = 0;
-          isMoving = false;
-      }
-      wait1Msec(1);
-      //nxtDisplayTextLine(5, "%d", PIDValue);
-      //nxtDisplayTextLine(6, "%d", currError);
-    }
-}
-
-
-
 // drives the robot forward
 void driveForward(float distance) {
-    float target = d_distanceTraveled + (distance / d_circumference / d_gearRatio) * andyPulseValue;
-    bool isMoving = true;
-    bool isFineTune = false;
-    int timer = 0.0;
-    int fineTuneTimer = 0.0;
-    float d_power;
-    float r_errorPower = 0.0;
-    float l_errorPower = 0.0;
-    float kP = 2.0;
-    float kI = 0.0001;
-    float currDt = 0.0;
-    float PIDValue = 0.0;
-    float currError = 0.0;
-    float prevError = 0.0;
-    float errorRate = 0.0;
-    float accumError = 0.0;
-    float startOrientation = orientation;
-    Time_ClearTimer(timer);
+	bool isMoving = true;
+	bool isFineTune = false;
+	int timer = 0.0;
+	int fineTuneTimer = 0.0;
+	float d_power;
+	float r_errorPower = 0.0;
+	float l_errorPower = 0.0;
+	float d_target = d_distanceTraveled + (distance / d_circumference / d_gearRatio) * andyPulseValue;
+	float d_kP = 2.0;
+	float d_kI = 0.0;
+	float currDt = 0.0;
+	float d_PIDValue = 0.0;
+	float d_currError = 0.0;
+	float d_prevError = 0.0;
+	float d_errorRate = 0.0;
+	float d_accumError = 0.0;
+	float t_target = orientation;
+	float t_kP = 0.0;
+	float t_kI = 0.0;
+	float t_PIDValue = 0.0;
+	float t_currError = 0.0;
+	float t_prevError = 0.0;
+	float t_errorRate = 0.0;
+	float t_accumError = 0.0;
+	Time_ClearTimer(timer);
 
-    while(isMoving) {
-    	currDt = Time_GetTime(timer) / 1000;
-    	Time_ClearTimer(timer);
-    	prevError = currError;
-      currError = target - d_distanceTraveled;
-      errorRate = currError - prevError;
-    	accumError += errorRate * currDt;
-    	PIDValue = kP * currError + kI * accumError;
+	while(isMoving) {
+		currDt = Time_GetTime(timer) / 1000;
+		Time_ClearTimer(timer);
+		d_prevError = d_currError;
+		d_currError = d_target - d_distanceTraveled;
+		d_errorRate = d_currError - d_prevError;
+		d_accumError += d_errorRate * currDt;
+		d_PIDValue = d_kP * d_currError + d_kI * d_accumError;
 
-      if(PIDValue > 100) {
-      	d_power = drivePower;
-      }
-      else if(PIDValue < -100) {
-      	d_power = -drivePower;
-      }
-      else if(PIDValue < 100 && PIDValue > 20) {
-      	d_power = (int)((float)PIDValue);
-      }
-      else if(PIDValue > -100 && PIDValue < -20) {
-      	d_power = (int)((float)PIDValue);
-      }
-      else if(PIDValue < 20) {
-        d_power = 20;
-      }
-      else if(PIDValue < -20) {
-        d_power = -20;
-      }
-      if(
-      motor[leftWheel] = d_power + l_errorPower;
-      motor[rightWheel] = d_power + r_errorPower;
-      if(abs(currError) < 50) {
-          motor[leftWheel] = 0;
-          motor[rightWheel] = 0;
-          isMoving = false;
-      }
-      wait1Msec(1);
-    }
-    wait1Msec(500);
-   	if(orientation!=tempOrientation) {
-   		while(orientation - tempOrientation >= 0.05) {
-   			motor[rightWheel] = 25;
-   		}
-   		motor[rightWheel] = 0;
-   		while(tempOrientation - orientation >= 0.05) {
-   			motor[leftWheel] = 25;
-   		}
-   		motor[leftWheel] = 0;
-   	}
+		t_prevError = t_currError;
+		t_currError = t_target - orientation;
+		t_errorRate = t_currError - t_prevError;
+		t_accumError += t_errorRate * currDt;
+		t_PIDValue = t_kP * t_currError + t_kI * t_accumError;
+
+		if(d_PIDValue > 100) {
+			d_power = drivePower;
+		}
+		else if(d_PIDValue < -100) {
+			d_power = -drivePower;
+		}
+		else if(d_PIDValue < 100 && d_PIDValue > 20) {
+			d_power = (int)((float)d_PIDValue);
+		}
+		else if(d_PIDValue > -100 && d_PIDValue < -20) {
+			d_power = (int)((float)d_PIDValue);
+		}
+		else if(d_PIDValue < 20) {
+			d_power = 20;
+		}
+		else if(d_PIDValue < -20) {
+			d_power = -20;
+		}
+
+		if(t_PIDValue > 30) {
+			r_errorPower = 30;
+			l_errorPower = 0;
+		}
+		else if(t_PIDValue < -30) {
+			r_errorPower = 0;
+			l_errorPower = 30;
+		}
+		else if(t_PIDValue < 30 && t_PIDValue > 0) {
+			r_errorPower = t_PIDValue;
+			l_errorPower = 0;
+		}
+		else if(t_PIDValue > -30 && t_PIDValue < 0) {
+			r_errorPower = 0;
+			l_errorPower = t_PIDValue;
+		}
+
+		if(abs(d_currError) < 50) {
+			d_power = 0;
+			r_errorPower = 0;
+			l_errorPower = 0;
+			isMoving = false;
+			isFineTune = true;
+		}
+		motor[leftWheel] = d_power + l_errorPower;
+		motor[rightWheel] = d_power + r_errorPower;
+	}
+	if(isFineTune) {
+		Time_ClearTimer(fineTuneTimer);
+		while(Time_GetTime(fineTuneTimer) < fineTuneTime) {
+			if(d_target - d_distanceTraveled > 0)	{
+				d_power = 15;
+			}
+			else if(d_target - d_distanceTraveled < 0) {
+				d_power = -15;
+			}
+			else	{
+				d_power = 0;
+			}
+			if(t_target - orientation > 0)	{
+				r_errorPower = 2;
+				l_errorPower = 0;
+			}
+			else if(t_target - orientation < 0) {
+				r_errorPower = 0;
+				l_errorPower = 2;
+			}
+			else if	{
+				r_errorPower = 0;
+				l_errorPower = 0;
+			}
+			motor[leftWheel] = d_power + l_errorPower;
+			motor[rightWheel] = d_power + r_errorPower;
+		}
+	}
+	motor[leftWheel] = 0;
+	motor[rightWheel] = 0;
+	wait1Msec(waitTime);
 }
 
 // moves the robot forward
@@ -331,29 +329,103 @@ void turnRight(float degrees) {
 		if(abs(currError) < 0.5) {
 			isFineTune = true;
 		}
-		if(isFineTune) {
-			Time_ClearTimer(fineTuneTimer);
-			while(Time_GetTime(fineTuneTimer) < 3) {
-				if(target - orientation > 0)	{
-					t_power = 20;
-				}
-				if(target - orientation < 0) {
-					t_power = -20;
-				}
-			}
-			t_power = 0;
-		}
 		motor[leftWheel] = t_power;
 		motor[rightWheel] = -t_power;
-		//nxtDisplayTextLine(3, "pwr: %d", t_power);
-		//nxtDisplayTextLine(5, "error: %d", currError);
-		wait1Msec(1);
 	}
+	if(isFineTune) {
+		Time_ClearTimer(fineTuneTimer);
+		while(Time_GetTime(fineTuneTimer) < fineTuneTime) {
+			if(target - orientation > 0.1)	{
+				t_power = 20;
+			}
+			else if(target - orientation < -0.1) {
+				t_power = -20;
+			}
+			else	{
+				t_power = 0;
+			}
+			motor[leftWheel] = t_power;
+			motor[rightWheel] = -t_power;
+		}
+	}
+	//nxtDisplayTextLine(3, "pwr: %d", t_power);
+	//nxtDisplayTextLine(5, "error: %d", currError);
+	motor[leftWheel] = 0;
+	motor[rightWheel] = 0;
+	wait1Msec(waitTime);
 }
 
 // turns the robot to the left
 void turnLeft(float degrees) {
 	turnRight(-degrees);
+}
+
+// raises the lift to the goal
+void raiseLift(float distance) {
+	float target;
+  bool isLifting = true;
+  bool isFineTune = false;
+  int timer = 0.0;
+  int fineTuneTimer = 0.0;
+	float l_power;
+	float kP = 0.3;
+	float kI = 0.0;
+	float currDt = 0.0;
+	float PIDValue = 0.0;
+	float currError = 0.0;
+	float prevError = 0.0;
+	float errorRate = 0.0;
+	float accumError = 0.0;
+
+	target = d_distanceTraveled + (distance / l_circumference /l_gearRatio) * regPulseValue;
+	Time_ClearTimer(timer);
+	while(isLifting) {
+		currDt = Time_GetTime(timer) / 1000;
+		Time_ClearTimer(timer);
+		prevError = currError;
+		currError = target - l_distanceTraveled;
+		errorRate = prevError - currError;
+		accumError += errorRate * currDt;
+		PIDValue = kP * currError + kI * accumError;
+
+		if(PIDValue > raisePower) {
+			l_power = raisePower;
+		}
+		else if(PIDValue < -lowerPower) {
+			l_power = -lowerPower;
+		}
+		else if(PIDValue < raisePower && PIDValue > 40) {
+			l_power = PIDValue;
+		}
+		if(currError < 50)	{
+			l_power = 0;
+			isLifting = false;
+			isFineTune = true;
+		}
+		motor[liftMotor] = l_power;
+	}
+	if(isFineTune) {
+		Time_ClearTimer(fineTuneTimer);
+		while(Time_GetTime(fineTuneTimer) < fineTuneTime) {
+			if(target - l_distanceTraveled > 0) {
+				l_power = 20;
+			}
+			else if(target - l_distanceTraveled < 0) {
+				l_power = -10;
+			}
+			else if(target - l_distanceTraveled == 0) {
+				l_power = 0;
+			}
+			motor[liftMotor] = l_power;
+		}
+	}
+	motor[liftMotor] = 0;
+	wait1Msec(waitTime);
+}
+
+// lowers the lift
+void lowerLift(float distance) {
+	raiseLift(-distance);
 }
 
 // sets lift position
@@ -363,7 +435,7 @@ void setLift(float pos) {
   int timer = 0.0;
 	float l_power;
 	float kP = 0.3;
-	float kI = 10.0;
+	float kI = 0.0;
 	float currDt = 0.0;
 	float PIDValue = 0.0;
 	float currError = 0.0;
@@ -456,7 +528,7 @@ task a_liftEncoder() {
 // checks the ir for the beacon
 task a_readIR() {
 	while(true) {
-		HTIRS2setDSPMode(1200);
+		HTIRS2setDSPMode(irSensor, 1200);
 		HTIRS2readAllACStrength(irSensor, irA, irB, irC, irD, irE);
 		// 0 to 50, 0 being no and 50 being super close
 		nxtDisplayTextLine(4, "irA: %d", irA);
@@ -464,7 +536,9 @@ task a_readIR() {
 		nxtDisplayTextLine(6, "irC: %d", irC);
 		nxtDisplayTextLine(7, "irD: %d", irD);
 		nxtDisplayTextLine(8, "irE: %d", irE);
+		if(irC != 0) {
+			irDetected = true;
+		}
 		wait1Msec(1);
-
 	}
 }

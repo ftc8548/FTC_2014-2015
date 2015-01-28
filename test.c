@@ -26,14 +26,86 @@ task main() {
 	while(true) {
 		encoderPrep();
 		startTrackers();
+		raiseLift(goalPosCenter);
 		driveForward(300.0);
-		wait1Msec(100);
-		//turnRight(90.0);
-		wait1Msec(100);
-
+		turnLeft(90.0);
+		raiseIR();
+		lowerLift(300.0);
 		while (true) {
 			wait1Msec(3000);
 		}
+		/*
+		// raiseIR();
+		// driveForward(300.0);
+		// turnRight(90.0);
+		// ir loop
+		if(!irDetected) {
+			// search for ir pos 3
+			driveForward(250.0);
+			if(irDetected == true) {
+				irPos3 = true;
+				break;
+			}
+			// second pos
+			if(!irPos1 && !irPos2 && !irPos3) {
+				// search for ir pos 1
+				// driveForward(250.0);
+				// turnLeft(90.0);
+				// driveForward(300.0);
+				if(irDetected == true) {
+					irPos1 = true;
+					break;
+				}
+			}
+			// third pos
+			if(!irPos1 && !irPos2 && !irPos3) {
+				// search for ir pos 2
+				// driveForward(100.0);
+				// turnLeft(45.0);
+				// driveForward(250.0);
+				if(irDetected == true) {
+					irPos2 = true;
+					break;
+				}
+			}
+		}
+		lowerIR();
+		raiseLift(50);
+		// center drop
+		//lowerLift(50);
+		if(irPos3) {
+			// to high goal
+			// driveForward(250.0);
+			// turnLeft(90.0);
+			// driveForward(800.0)
+			// should end up in tile adjacent to high goal
+		}
+		else if(irPos1) {
+			// to high goal
+			// driveForward(500.0);
+		}
+		else if(irPos2) {
+			// to high goal
+			// turnLeft(90.0);
+			// driveBackward(600.0);
+		}
+		else {
+			// finish, autonomous failed
+		}
+		if(irPos1 || irPos3)	{
+		// turnLeft(135.0);
+		}
+		// driveBackward(200.0);
+		// dropClamp();
+		// driveFoward(200.0);
+		// raiseLift(goalPosHigh);
+		// dropBall();
+		// lowerLift(goalPosHigh);
+		// turnLeft(45.0);
+		// driveBackward(800.0);
+		// turnRight(90.0);
+		// driveBackward(300.0);
+		*/
 		break;
 	}
 }
