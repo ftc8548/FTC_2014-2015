@@ -7,10 +7,14 @@ const int endIRPos = 130;
 const int startIRPos = 35;
 const int startPosClampR = 110;
 const int startPosClampL = 110;
+const int startPosClamp = 0;
 const int endPosClampR = 240;
 const int endPosClampL = 10;
+const int endPosClamp = 200;
 const int startPosDrop = 70;
 const int endPosDrop = 30;
+const int startPosCenter = 30;
+const int endPosCenter = 240;
 // driving powers
 const int turnPower = 40;
 const int drivePower = 40;
@@ -29,7 +33,6 @@ const float d_gearRatio = 2.0;
 const float l_gearRatio = 1.0;
 const int fineTuneTime = 1500;
 // lift variables
-const int goalPosGround = 0;
 const int goalPosHigh = 80;
 const int goalPosCenter = 120;
 // ir variables
@@ -66,9 +69,13 @@ void raiseClamp();
 // drops clamp servos
 void dropClamp();
 // drops balls
-void dropBall();
+void dropBallGoal();
 // resets drop
-void resetDrop();
+void resetDropGoal();
+// drops ball into center goal
+void dropBallCenter();
+// resets center drop
+void resetDropCenter();
 // drives the robot down the ramp
 void ramp(float distance);
 // moves the robot forward
@@ -102,7 +109,8 @@ task readIR();
 // gets the servos ready
 void servoPrep() {
 	raiseClamp();
-	resetDrop();
+	resetDropGoal();
+	resetDropCenter();
 	lowerIR();
 }
 
@@ -115,10 +123,10 @@ void encoderPrep() {
 
 // starts the tracker tasks
 void startTrackers() {
-	Task_Spawn(a_gyro);
-	Task_Spawn(a_liftEncoder);
-	Task_Spawn(a_wheelEncoder);
-	Task_Spawn(a_readIR);
+	Task_Spawn(gyro);
+	Task_Spawn(liftEncoder);
+	Task_Spawn(wheelEncoder);
+	Task_Spawn(readIR);
 	wait1Msec(1000);
 }
 
@@ -136,26 +144,41 @@ void lowerIR() {
 
 // raises clamp servos
 void raiseClamp() {
-	servo[clampServoL] = startPosClampL;
-	servo[clampServoR] = startPosClampR;
+	//servo[clampServoL] = startPosClampL;
+	//servo[clampServoR] = startPosClampR;
+	servo[clampServo] = startPosClamp;
+	wait1Msec(100);
 }
 
 // drops clamp servos
 void dropClamp() {
-	servo[clampServoL] = endPosClampL;
-	servo[clampServoR] = endPosClampR;
+	//servo[clampServoL] = endPosClampL;
+	//servo[clampServoR] = endPosClampR;
+	servo[clampServo] = endPosClamp;
 	wait1Msec(100);
 }
 
-// drops balls
-void dropBall() {
-	servo[dropServo] = endPosDrop;
+// drops balls into goal
+void dropBallGoal() {
+	servo[goalServo] = endPosDrop;
+	wait1Msec(1000);
+}
+
+// reset goal drop
+void resetDropGoal() {
+	servo[goalServo] = startPosDrop;
 	wait1Msec(100);
 }
 
-// reset drop
-void resetDrop() {
-	servo[dropServo] = startPosDrop;
+// drops ball into center
+void dropBallCenter() {
+	servo[centerServo] = endPosCenter;
+	wait1Msec(500);
+}
+
+// resets center drop
+void resetDropCenter() {
+	servo[centerServo] = startPosCenter;
 	wait1Msec(100);
 }
 
@@ -268,7 +291,7 @@ void driveForward(float distance) {
 				r_errorPower = 0;
 				l_errorPower = 2;
 			}
-			else if	{
+			else	{
 				r_errorPower = 0;
 				l_errorPower = 0;
 			}
@@ -377,7 +400,7 @@ void raiseLift(float distance) {
 	float errorRate = 0.0;
 	float accumError = 0.0;
 
-	target = d_distanceTraveled + (distance / l_circumference /l_gearRatio) * regPulseValue;
+	target = l_distanceTraveled + (distance / l_circumference /l_gearRatio) * regPulseValue;
 	Time_ClearTimer(timer);
 	while(isLifting) {
 		currDt = Time_GetTime(timer) / 1000;
@@ -485,7 +508,7 @@ void setLift(float pos) {
 ////////////////////////////// Task Definitions ///////////////////////////
 
 // starts the gyro
-task a_gyro() {
+task gyro() {
 	int timer_gyro = 0;
 	g_vel_curr = 0.0;
 	float g_dt = 0.0;
@@ -505,7 +528,7 @@ task a_gyro() {
 }
 
 // Distance Travelled by robot
-task a_wheelEncoder() {
+task wheelEncoder() {
 	d_distanceTraveled = 0.0;
 	float tickRight, tickLeft;
   while(true) {
@@ -518,7 +541,7 @@ task a_wheelEncoder() {
 }
 
 // tells position of the lift
-task a_liftEncoder() {
+task liftEncoder() {
 	while(true) {
 		l_distanceTraveled = (float) (Motor_GetEncoder(liftMotor));
 		wait1Msec(1);
@@ -526,7 +549,7 @@ task a_liftEncoder() {
 }
 
 // checks the ir for the beacon
-task a_readIR() {
+task readIR() {
 	while(true) {
 		HTIRS2setDSPMode(irSensor, 1200);
 		HTIRS2readAllACStrength(irSensor, irA, irB, irC, irD, irE);

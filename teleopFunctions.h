@@ -6,13 +6,15 @@
 const int startIRPos = 35;
 const int startPosClampR = 110;
 const int startPosClampL = 110;
+const int startPosClamp = 0;
 const int endPosClampR = 240;
 const int endPosClampL = 10;
+const int endPosClamp = 200;
 const int startPosDrop = 70;
 const int endPosDrop = 30;
 // powers
-const int maxPower = 100;
-const int liftPower = 100;
+const int raisePower = 100;
+const int lowerPower = 40;
 const int dropPower = -40;
 const int pickupPower = 65;
 const int stopPower = 0;
@@ -21,13 +23,12 @@ bool isFullPower = true;
 const int goalPosLow = 40;
 const int goalPosMid = 70;
 const int goalPosHigh = 100;
-const int goalPosCenter = 130;
 // PID
-const int andyPulseValue = 280;
 const int regPulseValue = 360;
 const float l_gearRatio = 1.0;
 const float l_wheelDiam = 10.0; // in cm
 const float l_circumference = l_wheelDiam * PI;
+const int fineTuneTime = 1500;
 
 ////////////////////////////// Don't Change These Variables //////////////
 
@@ -43,9 +44,9 @@ float l_distanceTraveled = 0.0;
 // gets the robot ready
 void servoPrep();
 // raises lift
-void raiseLift();
-// sets the lift position
-void setLift(float pos);
+void raiseLift(float distance);
+// lowers the lift a distance
+void lowerLift(float distance);
 
 /////////////////////////// Task Declarations ///////////////////////
 
@@ -60,131 +61,89 @@ task t_dropClamp();
 task t_raiseClamp();
 task t_dropBall();
 task t_resetDrop();
-task t_setLiftLow();
-task t_setLiftMiddle();
-task t_setLiftHigh();
-task t_setLiftCenter();
+task t_raiseLiftLow();
+task t_raiseLiftMiddle();
+task t_raiseLiftHigh();
+task t_lowerLiftLow();
+task t_lowerLiftMiddle();
+task t_lowerLiftHigh();
 
 ////////////////////////// Function Definitions /////////////////////
 
 // gets the robot ready
 void servoPrep() {
 	servo[irServo] = startIRPos; // resets ir servo
-	servo[dropServo] = startPosDrop;		// resets drop servo
+	servo[goalServo] = startPosDrop;		// resets drop servo
 }
 
-// sets lift position
-void setLift(float pos) {
-    float target;
-    bool isLifting = true;
-    int power = 0.0;
-    int timer = 0.0;
-	float l_power;
-	float kP = 0.3;
-	float kI = 10.0;
-	float totalDt = 0.0;
-	float currDt = 0.0;
-	float PIDValue = 0.0;
-	float currError = 0.0;
-	float prevError = 0.0;
-	float errorRate = 0.0;
-	float i_error = 0.0;
-	float i_errorValue = 0.0;
-
-    if(pos > l_distanceTraveled) {
-        target = l_distanceTraveled + (pos / l_circumference /l_gearRatio) * regPulseValue;
-    } else if (pos < l_distanceTraveled) {
-        target = l_distanceTraveled - (pos / l_circumference /l_gearRatio) * regPulseValue;
-    } else {
-        target = l_distanceTraveled;
-    }
-    Time_ClearTimer(timer);
-    while(isLifting) {
-        currDt = Time_GetTime(timer) / 1000 - totalDt;
-        totalDt += currDt;
-        prevError = currError;
-        currError = target - l_distanceTraveled;
-        errorRate = prevError - currError;
-
-        i_error = errorRate * currDt;
-        i_errorValue += i_error;
-
-        PIDValue = kP * currError + kI * i_errorValue;
-
-		if(PIDValue > 500) {
-			l_power = maxPower;
-		}
-		else if(PIDValue < 500) {
-			l_power = -maxPower;
-		}
-		else if(PIDValue > 150) {
-			l_power = 40;
-		}
-		else if(PIDValue < -150) {
-			l_power = -40;
-		}
-		else {
-			l_power = 0;
-			isLifting = false;
-		}
-		motor[liftMotor] = l_power;
-        wait1Msec(50);
-	}
-	motor[liftMotor] = 0;
-
-}
-
-// raises the lift
 void raiseLift(float distance) {
-	float target = l_distanceTraveled + (distance / l_circumference / l_gearRatio) * regPulseValue;
-    bool isLifting = true;
-    int power = 0.0;
-    int timer = 0.0;
+	float target;
+  bool isLifting = true;
+  bool isFineTune = false;
+  int timer = 0.0;
+  int fineTuneTimer = 0.0;
 	float l_power;
 	float kP = 0.3;
-	float kI = 10.0;
-	float totalDt = 0.0;
+	float kI = 0.0;
 	float currDt = 0.0;
 	float PIDValue = 0.0;
 	float currError = 0.0;
 	float prevError = 0.0;
 	float errorRate = 0.0;
-	float i_error = 0.0;
-	float i_errorValue = 0.0;
+	float accumError = 0.0;
+	isLift = true;
+
+	target = l_distanceTraveled + (distance / l_circumference /l_gearRatio) * regPulseValue;
 	Time_ClearTimer(timer);
+	while(isLifting) {
+		currDt = Time_GetTime(timer) / 1000;
+		Time_ClearTimer(timer);
+		prevError = currError;
+		currError = target - l_distanceTraveled;
+		errorRate = prevError - currError;
+		accumError += errorRate * currDt;
+		PIDValue = kP * currError + kI * accumError;
 
-    while(isLifting) {
-        currDt = Time_GetTime(timer) / 1000 - totalDt;
-        totalDt += currDt;
-        prevError = currError;
-        currError = target - l_distanceTraveled;
-        errorRate = prevError - currError;
-
-        i_error = errorRate * currDt;
-        i_errorValue += i_error;
-        PIDValue = kP * currError + kI * i_errorValue;
-
-		if(PIDValue > 500) {
-			l_power = maxPower;
+		if(PIDValue > raisePower) {
+			l_power = raisePower;
 		}
-		else if(PIDValue < 500) {
-			l_power = -maxPower;
+		else if(PIDValue < -lowerPower) {
+			l_power = -lowerPower;
 		}
-		else if(PIDValue > 150) {
-			l_power = 40;
+		else if(PIDValue < raisePower && PIDValue > 40) {
+			l_power = PIDValue;
 		}
-		else if(PIDValue < -150) {
-			l_power = -40;
-		}
-		else {
+		if(currError < 50)	{
 			l_power = 0;
 			isLifting = false;
+			isFineTune = true;
 		}
 		motor[liftMotor] = l_power;
 	}
+	if(isFineTune) {
+		Time_ClearTimer(fineTuneTimer);
+		while(Time_GetTime(fineTuneTimer) < fineTuneTime) {
+			if(target - l_distanceTraveled > 0) {
+				l_power = 20;
+			}
+			else if(target - l_distanceTraveled < 0) {
+				l_power = -10;
+			}
+			else if(target - l_distanceTraveled == 0) {
+				l_power = 0;
+			}
+			motor[liftMotor] = l_power;
+		}
+	}
 	motor[liftMotor] = 0;
+	isLift = false;
+	wait1Msec(1);
 }
 
+// lowers lift a set position
+void lowerLift(float distance) {
+	raiseLift(-distance);
+}
 
 /////////////////////////////// Task Definitions ////////////////////
 
@@ -197,7 +156,7 @@ task t_liftEncoder() {
 }
 
 // lowers the lift to the bottom goal
-/*task t_raiseLiftLow() {
+task t_raiseLiftLow() {
     raiseLift(goalPosLow);
     wait1Msec(1);
 }
@@ -214,26 +173,38 @@ task t_raiseLiftHigh() {
     wait1Msec(1);
 }
 
-// raises the lift to the center goal
-task t_raiseLiftCenter() {
-    raiseLift(goalPosCenter);
-    wait1Msec(1);
+// lowers lift from middle goal to ground
+task t_lowerLiftLow() {
+	lowerLift(goalPosLow);
 }
-*/
+
+// lowers lift from middle goal to ground
+task t_lowerLiftMiddle() {
+	lowerLift(goalPosMid);
+}
+
+// lowers lift from high goal to ground
+task t_lowerLiftHigh() {
+	lowerLift(goalPosHigh);
+}
 
 // raises the lift slightly
 task t_lowerLift() {
 	while(true) {
 		motor[liftMotor] = dropPower;
+		isLift = true;
 	}
+	isLift = false;
 	wait1Msec(1);
 }
 
 // raises lift slightly
 task t_raiseLift() {
 	while(true) {
-		motor[liftMotor] = liftPower;
+		motor[liftMotor] = raisePower;
+		isLift = true;
 	}
+	isLift = false;
 	wait1Msec(1);
 }
 
@@ -241,6 +212,7 @@ task t_raiseLift() {
 // stops the lift
 task t_stopLift() {
 	motor[liftMotor] = stopPower;
+	isLift = false;
 	wait1Msec(1);
 }
 
@@ -270,50 +242,28 @@ task t_stopPickup() {
 
 // drops the clamp
 task t_dropClamp() {
-	servo[clampServoR] = endPosClampR;
-	servo[clampServoL] = endPosClampL;
+	//servo[clampServoR] = endPosClampR;
+	//servo[clampServoL] = endPosClampL;
+	servo[clampServo] = endPosClamp;
 	wait1Msec(1);
 }
 
 // raises the clamp
 task t_raiseClamp() {
-	servo[clampServoR] = startPosClampR;
-	servo[clampServoL] = startPosClampL;
+	//servo[clampServoR] = startPosClampR;
+	//servo[clampServoL] = startPosClampL;
+	servo[clampServo] = startPosClamp;
 	wait1Msec(1);
 }
 
 // drops the balls
 task t_dropBall() {
-	servo[dropServo] = endPosDrop;
+	servo[goalServo] = endPosDrop;
 	wait1Msec(1);
 }
 
 // resets the drop servo
 task t_resetDrop() {
-	servo[dropServo] = startPosDrop;
+	servo[goalServo] = startPosDrop;
 	wait1Msec(1);
-}
-
-// sets the lift to the low goal pos
-task t_setLiftLow() {
-    setLift(goalPosLow);
-    wait1Msec(1);
-}
-
-// sets the lift to the middle goal pos
-task t_setLiftMiddle() {
-    setLift(goalPosMid);
-    wait1Msec(1);
-}
-
-// sets the lift to the high goal pos
-task t_setLiftHigh() {
-    setLift(goalPosHigh);
-    wait1Msec(1);
-}
-
-// sets the lift to the center goal pos
-task t_setLiftCenter() {
-    setLift(goalPosCenter);
-    wait1Msec(1);
 }

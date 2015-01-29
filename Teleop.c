@@ -9,14 +9,16 @@
 #pragma config(Motor,  mtr_S1_C3_1,     rightWheel,    				tmotorTetrix, openLoop, encoder)
 #pragma config(Motor,  mtr_S1_C3_2,     liftMotor,     				tmotorTetrix, openLoop, reversed, encoder)
 #pragma config(Servo,  srvo_S1_C2_1,    servo1,               tServoNone)
-#pragma config(Servo,  srvo_S1_C2_2,    servo2,               tServoNone)
-#pragma config(Servo,  srvo_S1_C2_3,    dropServo,            tServoStandard)
+#pragma config(Servo,  srvo_S1_C2_2,    centerServo,          tServoStandard)
+#pragma config(Servo,  srvo_S1_C2_3,    goalServo,            tServoStandard)
 #pragma config(Servo,  srvo_S1_C2_4,    clampServoR,          tServoStandard)
-#pragma config(Servo,  srvo_S1_C2_5,    clampServoL,          tServoStandard)
+#pragma config(Servo,  srvo_S1_C2_5,    clampServo,          tServoStandard)
 #pragma config(Servo,  srvo_S1_C2_6,    irServo,              tServoStandard)
-
+//#pragma config(Servo,	srvo_S1_C2_5,		clampServoL,						tServoStandard)
 #include "includes.h"
 #include "teleopFunctions.h"
+
+float goalPos = 0.0;
 
 //										So here are all the button commmands
 //													CONTROLLER 1
@@ -85,22 +87,34 @@ task main() {
 			Task_Kill(t_lowerLift);
 			Task_Spawn(t_stopLift);
 		}
-		// pressing A on Controller 1 puts lift in low goal pos
-	//	else if(Joystick_Button(BUTTON_A, CONTROLLER_1) && !isLift) {
-		//	Task_Spawn(t_setLiftLow);
-		//}
-		// pressing B on Controller 1 puts lift in middle goal pos
-		//else if(Joystick_Button(BUTTON_B, CONTROLLER_1) && !isLift) {
-			//Task_Spawn(t_setLiftMiddle);
-		//}
-		// pressing Y on Controller 1 puts lift in high goal pos
-		//else if(Joystick_Button(BUTTON_Y, CONTROLLER_1) && !isLift) {
-		//	Task_Spawn(t_setLiftHigh);
-		//}
-		// pressing X on Controller 1 puts lift in center goal pos
-		//else if(Joystick_Button(BUTTON_X, CONTROLLER_1) && !isLift) {
-			//Task_Spawn(t_setLiftCenter);
-	//	}
+		// pressing B on Controller 1 puts lift in low goal pos
+		/*
+		else if(Joystick_Button(BUTTON_B, CONTROLLER_1) && !isLift) {
+			Task_Spawn(t_raiseLiftLow);
+			goalPos = goalPosLow;
+		}
+		 pressing X on Controller 1 puts lift in middle goal pos
+		else if(Joystick_Button(BUTTON_X, CONTROLLER_1) && !isLift) {
+			Task_Spawn(t_raiseLiftMiddle);
+			goalPos = goalPosMid;
+		}
+		 // pressing Y on Controller 1 puts lift in high goal pos
+		else if(Joystick_Button(BUTTON_Y, CONTROLLER_1) && !isLift) {
+			Task_Spawn(t_raiseLiftHigh);
+			goalPos = goalPosHigh;
+		}
+		// pressing A on Controller 1 lowers lift to ground
+		else if(Joystick_Button(BUTTON_A, CONTROLLER_1) && !isLift && goalPos == goalPosLow) {
+			Task_Spawn(t_lowerLiftLow);
+		}
+		else if(Joystick_Button(BUTTON_A, CONTROLLER_1) && !isLift && goalPos == goalPosMid) {
+			Task_Spawn(t_lowerLiftMiddle);
+		}
+		else if(Joystick_Button(BUTTON_A,CONTROLLER_1) && !isLift && goalPos == goalPosHigh) {
+			Task_Spawn(t_lowerLiftHigh);
+		}
+		// make a kill lift button
+		*/
 
 		// loop controlling the pickup
 		// Holding RT on Controller 1 picks up balls

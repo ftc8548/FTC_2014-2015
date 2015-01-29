@@ -9,12 +9,12 @@
 #pragma config(Motor,  mtr_S1_C3_1,     rightWheel,    				tmotorTetrix, openLoop, encoder)
 #pragma config(Motor,  mtr_S1_C3_2,     liftMotor,     				tmotorTetrix, openLoop, reversed, encoder)
 #pragma config(Servo,  srvo_S1_C2_1,    servo1,               tServoNone)
-#pragma config(Servo,  srvo_S1_C2_2,    servo2,               tServoNone)
-#pragma config(Servo,  srvo_S1_C2_3,    dropServo,            tServoStandard)
+#pragma config(Servo,  srvo_S1_C2_2,    centerServo,          tServoStandard)
+#pragma config(Servo,  srvo_S1_C2_3,    goalServo,            tServoStandard)
 #pragma config(Servo,  srvo_S1_C2_4,    clampServoR,          tServoStandard)
-#pragma config(Servo,  srvo_S1_C2_5,    clampServoL,          tServoStandard)
+#pragma config(Servo,  srvo_S1_C2_5,    clampServo,          tServoStandard)
 #pragma config(Servo,  srvo_S1_C2_6,    irServo,              tServoStandard)
-
+//#pragma config(Servo,	srvo_S1_C2_5,		clampServoL,						tServoStandard)
 #include "includes.h"
 #include "autoFunctions.h"
 
@@ -26,11 +26,11 @@ task main() {
 	while(true) {
 		encoderPrep();
 		startTrackers();
-		raiseLift(goalPosCenter);
 		driveForward(300.0);
 		turnLeft(90.0);
+		raiseLift(goalPosCenter);
 		raiseIR();
-		lowerLift(300.0);
+		lowerLift(goalPosCenter);
 		while (true) {
 			wait1Msec(3000);
 		}
@@ -71,7 +71,8 @@ task main() {
 		}
 		lowerIR();
 		raiseLift(50);
-		// center drop
+		// dropBallCenter();
+		// resetDropCenter();
 		//lowerLift(50);
 		if(irPos3) {
 			// to high goal
@@ -99,7 +100,7 @@ task main() {
 		// dropClamp();
 		// driveFoward(200.0);
 		// raiseLift(goalPosHigh);
-		// dropBall();
+		// dropBallGoal();
 		// lowerLift(goalPosHigh);
 		// turnLeft(45.0);
 		// driveBackward(800.0);
