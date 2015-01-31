@@ -7,12 +7,12 @@
 #pragma config(Motor,  mtr_S1_C1_1,     leftWheel,     				tmotorTetrix, openLoop, reversed, encoder)
 #pragma config(Motor,  mtr_S1_C1_2,     firstPickupMotor, 		tmotorTetrix, openLoop, reversed)
 #pragma config(Motor,  mtr_S1_C3_1,     rightWheel,    				tmotorTetrix, openLoop, encoder)
-#pragma config(Motor,  mtr_S1_C3_2,     liftMotor,     				tmotorTetrix, openLoop, reversed, encoder)
+#pragma config(Motor,  mtr_S1_C3_2,     liftMotor,     				tmotorTetrix, openLoop, encoder)
 #pragma config(Servo,  srvo_S1_C2_1,    servo1,               tServoNone)
 #pragma config(Servo,  srvo_S1_C2_2,    centerServo,          tServoStandard)
 #pragma config(Servo,  srvo_S1_C2_3,    goalServo,            tServoStandard)
 #pragma config(Servo,  srvo_S1_C2_4,    clampServoR,          tServoStandard)
-#pragma config(Servo,  srvo_S1_C2_5,    clampServo,          tServoStandard)
+#pragma config(Servo,  srvo_S1_C2_5,    clampServo,          	tServoStandard)
 #pragma config(Servo,  srvo_S1_C2_6,    irServo,              tServoStandard)
 //#pragma config(Servo,	srvo_S1_C2_5,		clampServoL,						tServoStandard)
 #include "includes.h"
@@ -25,18 +25,20 @@ float goalPos = 0.0;
 //							Start puts robot in full power, Back puts robot in fine tuning
 //					Left Joystick moves the left wheel, Right Joystick moves the right wheel
 //								Right Trigger picks up balls, Left Trigger Releases balls
-//													CONTROLLER 2
 //							Right Bumper raises the lift, Left Bumper lowers the lift
+//													CONTROLLER 2
 //									Button A drops clamp, Button B raises clamp
 //									Button X drops balls, Button Y resets drop
 
 task main() {
 	initializeGlobalVariables();
 	servoPrep();
+	Task_Spawn(t_liftEncoder);
 	Joystick_WaitForStart();
 
 	while (true) {
 		Joystick_UpdateData();
+		nxtDisplayTextLine(1, "lift: %d", l_distanceTraveled);
 		// driving segment
 
 		// for full power, press start controller 1
@@ -65,24 +67,24 @@ task main() {
 			motor[rightWheel] = drivePowerR;
 
 		// for lift
-		// Holding RB on Controller 2 raises the lift
-		if(Joystick_Button(BUTTON_RB, CONTROLLER_2)) {
+		// Holding RB on Controller 1 raises the lift
+		if(Joystick_Button(BUTTON_RB, CONTROLLER_1))	{
 			isLift = true;
 			Task_Spawn(t_raiseLift);
 		}
-		// Releasing RB on Controller 2 stops the lift
-		else if(Joystick_ButtonReleased(BUTTON_RB, CONTROLLER_2)) {
+		// Releasing RB on Controller 1 stops the lift
+		else if(Joystick_ButtonReleased(BUTTON_RB, CONTROLLER_1)) {
 			isLift = false;
 			Task_Kill(t_raiseLift);
 			Task_Spawn(t_stopLift);
 		}
-		// Holding LB on Controller 2 lowers the lift
-		else if(Joystick_Button(BUTTON_LB, CONTROLLER_2)) {
+		// Holding LB on Controller 1 lowers the lift
+		else if(Joystick_Button(BUTTON_LB, CONTROLLER_1))	{
 			isLift = true;
 			Task_Spawn(t_lowerLift);
 		}
-		// Releasing LB on Controller 2 stops the lift
-		else if(Joystick_ButtonReleased(BUTTON_LB, CONTROLLER_2)) {
+		// Releasing LB on Controller 1 stops the lift
+		else if(Joystick_ButtonReleased(BUTTON_LB, CONTROLLER_1)) {
 			isLift = false;
 			Task_Kill(t_lowerLift);
 			Task_Spawn(t_stopLift);

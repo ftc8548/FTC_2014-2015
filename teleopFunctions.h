@@ -4,13 +4,14 @@
 
 // servos
 const int startIRPos = 35;
+const int endIRPos = 130;
 const int startPosClampR = 110;
 const int startPosClampL = 110;
-const int startPosClamp = 0;
+const int startPosClamp = 10;
 const int endPosClampR = 240;
-const int endPosClampL = 10;
-const int endPosClamp = 200;
-const int startPosDrop = 70;
+const int endPosClampL = 30;
+const int endPosClamp = 80;
+const int startPosDrop = 255;
 const int endPosDrop = 30;
 // powers
 const int raisePower = 100;
@@ -72,7 +73,8 @@ task t_lowerLiftHigh();
 
 // gets the robot ready
 void servoPrep() {
-	servo[irServo] = startIRPos; // resets ir servo
+	nMotorEncoder(liftMotor) = 0;
+	servo[irServo] = endIRPos; // resets ir servo
 	servo[goalServo] = startPosDrop;		// resets drop servo
 }
 
@@ -192,9 +194,7 @@ task t_lowerLiftHigh() {
 task t_lowerLift() {
 	while(true) {
 		motor[liftMotor] = dropPower;
-		isLift = true;
 	}
-	isLift = false;
 	wait1Msec(1);
 }
 
@@ -202,9 +202,7 @@ task t_lowerLift() {
 task t_raiseLift() {
 	while(true) {
 		motor[liftMotor] = raisePower;
-		isLift = true;
 	}
-	isLift = false;
 	wait1Msec(1);
 }
 

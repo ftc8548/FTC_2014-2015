@@ -7,12 +7,12 @@
 #pragma config(Motor,  mtr_S1_C1_1,     leftWheel,     				tmotorTetrix, openLoop, reversed, encoder)
 #pragma config(Motor,  mtr_S1_C1_2,     firstPickupMotor, 		tmotorTetrix, openLoop, reversed)
 #pragma config(Motor,  mtr_S1_C3_1,     rightWheel,    				tmotorTetrix, openLoop, encoder)
-#pragma config(Motor,  mtr_S1_C3_2,     liftMotor,     				tmotorTetrix, openLoop, reversed, encoder)
+#pragma config(Motor,  mtr_S1_C3_2,     liftMotor,     				tmotorTetrix, openLoop, encoder)
 #pragma config(Servo,  srvo_S1_C2_1,    servo1,               tServoNone)
 #pragma config(Servo,  srvo_S1_C2_2,    centerServo,          tServoStandard)
 #pragma config(Servo,  srvo_S1_C2_3,    goalServo,            tServoStandard)
 #pragma config(Servo,  srvo_S1_C2_4,    clampServoR,          tServoStandard)
-#pragma config(Servo,  srvo_S1_C2_5,    clampServo,          tServoStandard)
+#pragma config(Servo,  srvo_S1_C2_5,    clampServo,          	tServoStandard)
 #pragma config(Servo,  srvo_S1_C2_6,    irServo,              tServoStandard)
 //#pragma config(Servo,	srvo_S1_C2_5,		clampServoL,						tServoStandard)
 #include "includes.h"
@@ -21,24 +21,26 @@
 
 task main() {
 	servoPrep();
-	//Joystick_WaitForStart();
+	Joystick_WaitForStart();
 	disableDiagnosticsDisplay();
 	while(true) {
 		encoderPrep();
 		startTrackers();
 		driveForward(300.0);
 		turnLeft(90.0);
-		raiseLift(goalPosCenter);
-		raiseIR();
-		lowerLift(goalPosCenter);
-		while (true) {
-			wait1Msec(3000);
-		}
+		driveForward(200.0);
+		//raiseLift(goalPosCenter);
+		//dropBallCenter();
+		//resetDropCenter();
+		//raiseIR();
+		//lowerLift(goalPosCenter);
+		//dropClamp();
+
 		/*
-		// raiseIR();
 		// driveForward(300.0);
 		// turnRight(90.0);
 		// ir loop
+		// raiseIR();
 		if(!irDetected) {
 			// search for ir pos 3
 			driveForward(250.0);
