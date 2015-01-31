@@ -5,14 +5,11 @@
 // servos
 const int startIRPos = 35;
 const int endIRPos = 130;
-const int startPosClampR = 110;
-const int startPosClampL = 110;
 const int startPosClamp = 10;
-const int endPosClampR = 240;
-const int endPosClampL = 30;
-const int endPosClamp = 80;
-const int startPosDrop = 255;
-const int endPosDrop = 30;
+const int endPosClamp = 110;
+const int startPosDrop = 187;
+const int endPosDrop = 137;
+const int startPosCenter = 50;
 // powers
 const int raisePower = 100;
 const int lowerPower = 40;
@@ -23,7 +20,7 @@ bool isFullPower = true;
 // goal positions
 const int goalPosLow = 40;
 const int goalPosMid = 70;
-const int goalPosHigh = 100;
+const int goalPosHigh = 14000;
 // PID
 const int regPulseValue = 360;
 const float l_gearRatio = 1.0;
@@ -76,6 +73,7 @@ void servoPrep() {
 	nMotorEncoder(liftMotor) = 0;
 	servo[irServo] = endIRPos; // resets ir servo
 	servo[goalServo] = startPosDrop;		// resets drop servo
+	servo[centerServo] = startPosCenter; // resets center servo
 }
 
 void raiseLift(float distance) {
@@ -240,16 +238,12 @@ task t_stopPickup() {
 
 // drops the clamp
 task t_dropClamp() {
-	//servo[clampServoR] = endPosClampR;
-	//servo[clampServoL] = endPosClampL;
 	servo[clampServo] = endPosClamp;
 	wait1Msec(1);
 }
 
 // raises the clamp
 task t_raiseClamp() {
-	//servo[clampServoR] = startPosClampR;
-	//servo[clampServoL] = startPosClampL;
 	servo[clampServo] = startPosClamp;
 	wait1Msec(1);
 }

@@ -3,18 +3,14 @@
 ///////////////////////// Changable Variables //////////////////////////
 
 // servos
-const int endIRPos = 130;
+const int endIRPos = 125;
 const int startIRPos = 35;
-const int startPosClampR = 110;
-const int startPosClampL = 110;
-const int startPosClamp = 0;
-const int endPosClampR = 240;
-const int endPosClampL = 10;
-const int endPosClamp = 200;
-const int startPosDrop = 20;
-const int endPosDrop = 20;
-const int startPosCenter = 30;
-const int endPosCenter = 240;
+const int startPosClamp = 10;
+const int endPosClamp = 110;
+const int startPosDrop = 187;
+const int endPosDrop = 147;
+const int startPosCenter = 0;
+const int endPosCenter = 110;
 // driving powers
 const int turnPower = 40;
 const int optimalMaxDrivePower = 40;
@@ -24,10 +20,11 @@ const int minMinDrivePower = 10;
 const int optimalMaxTurnPower = 40;
 const int optimalMinTurnPower = 17;
 const int maxMaxTurnPower = 100;
-const int minMinTurnPower = 15;
+const int minMinDriveTurnPower = 17;
+const int minMinTurnPower = 17;
 const int rampPower = 25;
 const int raisePower = 100;
-const int lowerPower = 40;
+const int lowerPower = 80;
 const int liftPower = 100;
 // PID variables
 const int andyPulseValue = 280;
@@ -38,7 +35,7 @@ const float d_circumference = d_wheelDiam * PI;
 const float l_circumference = l_wheelDiam * PI;
 const float d_gearRatio = 2.0;
 const float l_gearRatio = 1.0;
-const int fineTuneTime = 1500;
+const int fineTuneTime = 1000;
 // lift variables
 const int goalPosHigh = 80;
 const int goalPosCenter = 120;
@@ -112,6 +109,8 @@ task wheelEncoder();
 task liftEncoder();
 // checks to see if the ir detects the beacon
 task readIR();
+// lowers lift
+task t_lowerLift();
 
 ///////////////////////////// Function Definitions ///////////////////////////
 
@@ -136,7 +135,7 @@ void startTrackers() {
 	Task_Spawn(liftEncoder);
 	Task_Spawn(wheelEncoder);
 	Task_Spawn(readIR);
-	wait1Msec(1000);
+	wait1Msec(waitTime);
 }
 
 // raises the ir sensor
@@ -153,16 +152,12 @@ void lowerIR() {
 
 // raises clamp servos
 void raiseClamp() {
-	//servo[clampServoL] = startPosClampL;
-	//servo[clampServoR] = startPosClampR;
 	servo[clampServo] = startPosClamp;
 	wait1Msec(100);
 }
 
 // drops clamp servos
 void dropClamp() {
-	//servo[clampServoL] = endPosClampL;
-	//servo[clampServoR] = endPosClampR;
 	servo[clampServo] = endPosClamp;
 	wait1Msec(100);
 }
@@ -170,7 +165,7 @@ void dropClamp() {
 // drops balls into goal
 void dropBallGoal() {
 	servo[goalServo] = endPosDrop;
-	wait1Msec(1000);
+	wait1Msec(700);
 }
 
 // reset goal drop
@@ -195,13 +190,14 @@ void driveForward(float distance, int maxPower, int minPower) {
 	bool isMoving = true;
 	bool isFineTune = false;
 	int timer = 0.0;
+	int totalTimer = 0.0;
 	int fineTuneTimer = 0.0;
 	float l_power, r_power;
 	float r_errorPower = 0.0;
 	float l_errorPower = 0.0;
 	float d_leftTarget = d_leftSide + (distance / d_circumference / d_gearRatio) * andyPulseValue;
 	float d_rightTarget = d_rightSide + (distance / d_circumference / d_gearRatio) * andyPulseValue;
-	float d_kP = 0.8;
+	float d_kP = 0.7;
 	float d_kI = 0.0;
 	float currDt = 0.0;
 	float d_leftPIDValue = 0.0;
@@ -223,6 +219,7 @@ void driveForward(float distance, int maxPower, int minPower) {
 	float t_errorRate = 0.0;
 	float t_accumError = 0.0;
 	Time_ClearTimer(timer);
+	Time_ClearTimer(totalTimer);
 
 	while(isMoving) {
 		currDt = Time_GetTime(timer) / 1000;
@@ -284,28 +281,40 @@ void driveForward(float distance, int maxPower, int minPower) {
 		}
 
 		if(t_PIDValue > 30) {
-			r_errorPower = 30;
-			l_errorPower = 0;
+			l_errorPower = 30;
+			r_errorPower = 0;
 		}
 		else if(t_PIDValue < -30) {
-			r_errorPower = 0;
-			l_errorPower = 30;
-		}
-		else if(t_PIDValue < 30 && t_PIDValue > minMinTurnPower) {
-			r_errorPower = t_PIDValue;
 			l_errorPower = 0;
+			r_errorPower = 30;
 		}
-		else if(t_PIDValue > -30 && t_PIDValue < -minMinTurnPower) {
-			r_errorPower = 0;
+		else if(t_PIDValue < 30 && t_PIDValue > minMinDriveTurnPower) {
 			l_errorPower = t_PIDValue;
+			r_errorPower = 0;
 		}
-		else if(t_PIDValue < minMinTurnPower && t_PIDValue > 0) {
-			r_errorPower = minMinTurnPower;
-			l_errorPower = -minMinTurnPower;
+		else if(t_PIDValue > -30 && t_PIDValue < -minMinDriveTurnPower) {
+			l_errorPower = 0;
+			r_errorPower = t_PIDValue;
 		}
-		else if(t_PIDValue > -minMinTurnPower && t_PIDValue < 0) {
-			r_errorPower = minMinTurnPower;
-			l_errorPower = -minMinTurnPower;
+		else if(t_PIDValue < minMinDriveTurnPower && t_PIDValue > 0) {
+			if(d_rightSide < d_leftSide) {
+				l_errorPower = minMinDriveTurnPower;
+				r_errorPower = 0;
+			}
+			else if(d_rightSide > d_leftSide) {
+				l_errorPower = 0;
+				r_errorPower = -minMinDriveTurnPower;
+			}
+		}
+		else if(t_PIDValue > -minMinDriveTurnPower && t_PIDValue < 0) {
+			if(d_rightSide < d_leftSide) {
+				l_errorPower = 0;
+				r_errorPower = minMinDriveTurnPower;
+			}
+			else if(d_rightSide > d_leftSide) {
+				l_errorPower = -minMinDriveTurnPower ;
+				r_errorPower = 0;
+			}
 		}
 
 		if(abs(d_leftCurrError) < 50) {
@@ -324,7 +333,12 @@ void driveForward(float distance, int maxPower, int minPower) {
 		}
 		motor[leftWheel] = l_power + l_errorPower;
 		motor[rightWheel] = r_power + r_errorPower;
-		nxtDisplayTextLine(4, "PIDVALUE: %d", t_PIDValue);
+		if(Time_GetTime(totalTimer) > 3000) {
+			motor[rightWheel] = 0;
+			motor[leftWheel] = 0;
+			isMoving = false;
+			break;
+		}
 	}
 	/*
 	if(isFineTune) {
@@ -370,7 +384,6 @@ void driveForward(float distance, int maxPower, int minPower) {
 	motor[leftWheel] = 0;
 	motor[rightWheel] = 0;
 	wait1Msec(waitTime);
-	wait1Msec(30000);
 }
 
 // moves the robot forward
@@ -383,6 +396,7 @@ void turnRight(float degrees, int maxPower, int minPower) {
 	bool isTurning = true;
 	bool isFineTune = false;
 	int timer = 0.0;
+	int totalTimer = 0.0;
 	int fineTuneTimer = 0.0;
 	float target = orientation + degrees;
 	float t_power;
@@ -396,6 +410,7 @@ void turnRight(float degrees, int maxPower, int minPower) {
 	float accumError = 0.0;
 
 	Time_ClearTimer(timer);
+	Time_ClearTimer(totalTimer);
 	while(isTurning) {
 		currDt = Time_GetTime(timer) / 1000;
 		Time_ClearTimer(timer);
@@ -405,28 +420,40 @@ void turnRight(float degrees, int maxPower, int minPower) {
 		accumError += errorRate * currDt;
 		PIDValue = kP * currError + kI * accumError;
 
-		if(PIDValue > maxPower)
+		if(PIDValue > maxPower)	{
 			t_power = maxPower;
-		else if(PIDValue < -maxPower)
+		}
+		else if(PIDValue < -maxPower)	{
 			t_power = -maxPower;
-		else	{
+		}
+		else if(PIDValue < maxPower && PIDValue > minPower)	{
 			t_power = PIDValue;
 		}
-		if(abs(t_power) < minPower) {
-			if(t_power > 0) {
-				t_power = minPower;
-			}
-			else if(t_power < 0)
-				t_power = -minPower;
-			}
-		if(abs(currError) < 0.5) {
-			isFineTune = true;
+		else if(PIDValue > -maxPower && PIDValue < -minPower) {
+			t_power = PIDValue;
+		}
+		else if(PIDValue < minPower && PIDValue > 0.0)	{
+			t_power = minPower;
+		}
+		else if(PIDValue > -minPower && PIDValue < 0.0)	{
+			t_power = -minPower;
+		}
+		if(abs(currError) < 1.0) {
 			t_power = 0;
+			isFineTune = true;
+			isTurning = false;
+		}
+		if(Time_GetTime(totalTimer) > 3000) {
+			motor[rightWheel] = 0;
+			motor[leftWheel] = 0;
+			isTurning = false;
+			isFineTune = false;
+			break;
 		}
 		motor[leftWheel] = t_power;
 		motor[rightWheel] = -t_power;
 	}
-	/*if(isFineTune) {
+	if(isFineTune) {
 		Time_ClearTimer(fineTuneTimer);
 		while(Time_GetTime(fineTuneTimer) < fineTuneTime) {
 			if(target - orientation > 0.3)	{
@@ -441,7 +468,7 @@ void turnRight(float degrees, int maxPower, int minPower) {
 			motor[leftWheel] = t_power;
 			motor[rightWheel] = -t_power;
 		}
-	}*/
+	}
 	motor[leftWheel] = 0;
 	motor[rightWheel] = 0;
 	wait1Msec(waitTime);
@@ -568,19 +595,26 @@ task liftEncoder() {
 // checks the ir for the beacon
 task readIR() {
 	while(true) {
-		HTIRS2setDSPMode(irSensor, 1200);
+		HTIRS2setDSPMode(irSensor, DSP_1200);
 		HTIRS2readAllACStrength(irSensor, irA, irB, irC, irD, irE);
 		// 0 to 50, 0 being no and 50 being super close
-		nxtDisplayTextLine(4, "irA: %d", irA);
-		nxtDisplayTextLine(5, "irB: %d", irB);
-		nxtDisplayTextLine(6, "irC: %d", irC);
-		nxtDisplayTextLine(7, "irD: %d", irD);
-		nxtDisplayTextLine(8, "irE: %d", irE);
-		if(irC != 0) {
+		nxtDisplayTextLine(3, "irA: %d", irA);
+		nxtDisplayTextLine(4, "irB: %d", irB);
+		nxtDisplayTextLine(5, "irC: %d", irC);
+		nxtDisplayTextLine(6, "irD: %d", irD);
+		nxtDisplayTextLine(7, "irE: %d", irE);
+		if(irC >= 50) {
 			irDetected = true;
 		}
 		wait1Msec(1);
 	}
+}
+
+task t_lowerLift() {
+	lowerLift(900.0);
+	lowerLift(900.0);
+	lowerLift(900.0);
+	lowerLift(900.0);
 }
 
 /*

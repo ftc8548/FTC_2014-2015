@@ -1,6 +1,6 @@
 #pragma config(Hubs,  S1, HTMotor,  HTServo,  HTMotor,  none)
 #pragma config(Sensor, S2,     gyroSensor,     sensorAnalogInactive)
-#pragma config(Sensor, S3,     	 irSensor,       sensorHiTechnicIRSeeker600)
+#pragma config(Sensor, S3,     	 irSensor,     sensorI2CCustom9V)
 #pragma config(Motor,  motorA,           ,             tmotorNXT, openLoop)
 #pragma config(Motor,  motorB,           ,             tmotorNXT, openLoop)
 #pragma config(Motor,  motorC,           ,             tmotorNXT, openLoop)
@@ -9,12 +9,12 @@
 #pragma config(Motor,  mtr_S1_C3_1,     rightWheel,    				tmotorTetrix, openLoop, encoder)
 #pragma config(Motor,  mtr_S1_C3_2,     liftMotor,     				tmotorTetrix, openLoop, encoder)
 #pragma config(Servo,  srvo_S1_C2_1,    servo1,               tServoNone)
-#pragma config(Servo,  srvo_S1_C2_2,    centerServo,          tServoStandard)
+#pragma config(Servo,  srvo_S1_C2_2,    servo2,          tServoStandard)
 #pragma config(Servo,  srvo_S1_C2_3,    goalServo,            tServoStandard)
-#pragma config(Servo,  srvo_S1_C2_4,    clampServoR,          tServoStandard)
+#pragma config(Servo,  srvo_S1_C2_4,    centerServo,          tServoStandard)
 #pragma config(Servo,  srvo_S1_C2_5,    clampServo,          	tServoStandard)
 #pragma config(Servo,  srvo_S1_C2_6,    irServo,              tServoStandard)
-//#pragma config(Servo,	srvo_S1_C2_5,		clampServoL,						tServoStandard)
+
 #include "includes.h"
 #include "teleopFunctions.h"
 
@@ -38,7 +38,6 @@ task main() {
 
 	while (true) {
 		Joystick_UpdateData();
-		nxtDisplayTextLine(1, "lift: %d", l_distanceTraveled);
 		// driving segment
 
 		// for full power, press start controller 1
